@@ -3,7 +3,7 @@
 #  Multi-Resolution Surfel Map (MRSMap) Library                                           #
 #  (c) 2010- Joerg Stueckler, Computer Science Institute VI, University of Bonn Germany   #
 #                                                                                         #
-#  Version: 0.3, 01.07.2014                                                              #
+#  Version: 0.3, 01.07.2014                                                               #
 #                                                                                         #
 ###########################################################################################
  

@@ -62,9 +62,13 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 # -- mrslib for map aggregation, registration, and visualization
 set( SRC_MRSMAPLIB    
-                src/map/multiresolution_surfel_map.cpp
+		src/map/multiresolution_surfel_map.cpp
+		src/map/nodevalue.cpp
+		src/map/surfel.cpp
+		src/map/surfelpair.cpp
 		src/map/shapetexture_feature.cpp
-                src/registration/multiresolution_surfel_registration.cpp
+		src/registration/multiresolution_surfel_registration.cpp
+#		src/registration/multiresolution_soft_surfel_registration.cpp
 		src/utilities/utilities.cpp
 		src/visualization/visualization_map.cpp
 )

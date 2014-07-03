@@ -204,7 +204,7 @@ void MultiResolutionSurfelMap::extents( Eigen::Matrix< double, 3, 1 >& mean, Eig
 
 		  NodeValue& v = (*it)->value_;
 
-		  for( int i = 0; i < MAX_NUM_SURFELS; i++ ) {
+		  for( int i = 0; i < NodeValue::num_surfels_; i++ ) {
 
 				Eigen::Vector3d mean_s = v.surfels_[i].mean_.block<3,1>(0,0);
 				double num_points_s = v.surfels_[i].num_points_;
@@ -302,7 +302,7 @@ void MultiResolutionSurfelMap::addPoints( const pcl::PointCloud< pcl::PointXYZRG
 		NodeValue value;
 
 		// add surfel to view directions within an angular interval
-		for( unsigned int k = 0; k < MAX_NUM_SURFELS; k++ ) {
+		for( unsigned int k = 0; k < NodeValue::num_surfels_; k++ ) {
 			const double dist = viewDirection.dot( value.surfels_[k].initial_view_dir_ );
 			if( dist > max_dist ) {
 				value.surfels_[k] += surfel;
@@ -464,7 +464,7 @@ void MultiResolutionSurfelMap::addImage( const pcl::PointCloud< pcl::PointXYZRGB
 				// create new node value
 				*mapPtr = imageAllocator_->imageNodeAllocator_.allocate();
 				memcpy( (*mapPtr)->surfels_, initValue.surfels_, sizeof(initValue.surfels_) );
-				for( unsigned int i = 0; i < 6; i++ ) {
+				for( unsigned int i = 0; i < NodeValue::num_surfels_; i++ ) {
 					(*mapPtr)->surfels_[i].first_view_dir_ = viewDirection;
 				}
 
@@ -527,7 +527,7 @@ void MultiResolutionSurfelMap::addImage( const pcl::PointCloud< pcl::PointXYZRGB
 			}
 			else {
 				// add surfel to view directions within an angular interval
-				for( unsigned int k = 0; k < MAX_NUM_SURFELS; k++ ) {
+				for( unsigned int k = 0; k < NodeValue::num_surfels_; k++ ) {
 					const double dist = viewDirection.dot( (*mapPtr)->surfels_[k].initial_view_dir_ );
 					if( dist > max_dist ) {
 //						(*mapPtr)->surfels_[k].add( pos, ppT, 1.0 );
@@ -733,7 +733,7 @@ void MultiResolutionSurfelMap::addDisplacementImage( const pcl::PointCloud< pcl:
 				// create new node value
 				*mapPtr = imageAllocator_->imageNodeAllocator_.allocate();
 				memcpy( (*mapPtr)->surfels_, initValue.surfels_, sizeof(initValue.surfels_) );
-				for( unsigned int i = 0; i < 6; i++ ) {
+				for( unsigned int i = 0; i < NodeValue::num_surfels_; i++ ) {
 					(*mapPtr)->surfels_[i].first_view_dir_ = viewDirection;
 				}
 
@@ -769,7 +769,7 @@ void MultiResolutionSurfelMap::addDisplacementImage( const pcl::PointCloud< pcl:
 			}
 			else {
 				// add surfel to view directions within an angular interval
-				for( unsigned int k = 0; k < MAX_NUM_SURFELS; k++ ) {
+				for( unsigned int k = 0; k < NodeValue::num_surfels_; k++ ) {
 					const double dist = viewDirection.dot( (*mapPtr)->surfels_[k].initial_view_dir_ );
 					if( dist > max_dist ) {
 //						(*mapPtr)->surfels_[k].add( pos, ppT, 1.0 );
@@ -1821,7 +1821,7 @@ void MultiResolutionSurfelMap::clearAtPoints( const pcl::PointCloud< pcl::PointX
 		while ( n ) {
 
 
-			for( unsigned int k = 0; k < MAX_NUM_SURFELS; k++ ) {
+			for( unsigned int k = 0; k < NodeValue::num_surfels_; k++ ) {
 				const double dist = viewDirection.dot( n->value_.surfels_[k].initial_view_dir_ );
 				if( dist > max_dist ) {
 					n->value_.surfels_[k].clear();
@@ -1878,7 +1878,7 @@ void MultiResolutionSurfelMap::markNoUpdateAtPoints( const pcl::PointCloud< pcl:
 		spatialaggregate::OcTreeNode< float, NodeValue >* n = octree_->root_;
 		while ( n ) {
 
-			for( unsigned int k = 0; k < MAX_NUM_SURFELS; k++ ) {
+			for( unsigned int k = 0; k < NodeValue::num_surfels_; k++ ) {
 				const double dist = viewDirection.dot( n->value_.surfels_[k].initial_view_dir_ );
 				if( dist > max_dist ) {
 					n->value_.surfels_[k].applyUpdate_ = false;
@@ -1953,15 +1953,15 @@ public:
 };
 
 
-void markBorderFromViewpointFunction( spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* current, spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* next, void* data ) {
+void markBorderFromViewpointFunction( spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::MultiResolutionSurfelMap::NodeValue >* current, spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* next, void* data ) {
 
 	MarkBorderInfo* info = (MarkBorderInfo*) data;
 
 //	current->value_.border_ = false;
 
-	for( unsigned int i = 0; i < 6; i++ ) {
+	for( unsigned int i = 0; i < MultiResolutionSurfelMap::NodeValue::num_surfels_; i++ ) {
 
-		const Surfel& surfel = current->value_.surfels_[i];
+		const MultiResolutionSurfelMap::Surfel& surfel = current->value_.surfels_[i];
 
 		if( surfel.num_points_ < MIN_SURFEL_POINTS )
 			continue;
@@ -2044,7 +2044,7 @@ void MultiResolutionSurfelMap::clearUpdateSurfelsAtPoints( const pcl::PointCloud
 		spatialaggregate::OcTreeNode< float, NodeValue >* n = octree_->root_;
 		while ( n ) {
 
-			for( unsigned int k = 0; k < MAX_NUM_SURFELS; k++ ) {
+			for( unsigned int k = 0; k < NodeValue::num_surfels_; k++ ) {
 				const double dist = viewDirection.dot( n->value_.surfels_[k].initial_view_dir_ );
 				if( dist > max_dist ) {
 					if( !n->value_.surfels_[k].up_to_date_ ) {
@@ -2071,7 +2071,7 @@ void MultiResolutionSurfelMap::markUpdateAllSurfels() {
 
 inline void MultiResolutionSurfelMap::markUpdateAllSurfelsFunction( spatialaggregate::OcTreeNode< float, NodeValue >* current, spatialaggregate::OcTreeNode< float, NodeValue >* next, void* data ) {
 
-	for ( unsigned int i = 0; i < MAX_NUM_SURFELS; i++ )
+	for ( unsigned int i = 0; i < NodeValue::num_surfels_; i++ )
 		current->value_.surfels_[i].applyUpdate_ = true;
 
 }
@@ -2147,13 +2147,13 @@ inline void MultiResolutionSurfelMap::clearAssociationsFunction( spatialaggregat
 		current->value_.associated_ = 1;
 	current->value_.association_ = NULL;
 
-	for( unsigned int i = 0; i < MAX_NUM_SURFELS; i++ )
+	for( unsigned int i = 0; i < NodeValue::num_surfels_; i++ )
 		current->value_.surfels_[i].seenThrough_ = false;
 }
 
 
 inline void MultiResolutionSurfelMap::clearSeenThroughFlagFunction( spatialaggregate::OcTreeNode< float, NodeValue >* current, spatialaggregate::OcTreeNode< float, NodeValue >* next, void* data ) {
-	for( unsigned int i = 0; i < MAX_NUM_SURFELS; i++ )
+	for( unsigned int i = 0; i < NodeValue::num_surfels_; i++ )
 		current->value_.surfels_[i].seenThrough_ = false;
 }
 
@@ -2248,7 +2248,7 @@ void MultiResolutionSurfelMap::buildShapeTextureFeatures() {
 
 inline void MultiResolutionSurfelMap::buildSimpleShapeTextureFeatureFunction( spatialaggregate::OcTreeNode<float, NodeValue>* current, spatialaggregate::OcTreeNode<float, NodeValue>* next, void* data ) {
 
-	for( unsigned int i = 0; i < MAX_NUM_SURFELS; i++ ) {
+	for( unsigned int i = 0; i < NodeValue::num_surfels_; i++ ) {
 
 		current->value_.surfels_[i].simple_shape_texture_features_.initialize();
 
@@ -2282,7 +2282,7 @@ inline void MultiResolutionSurfelMap::buildAgglomeratedShapeTextureFeatureFuncti
 
 	const float neighborFactor = 0.1f;
 
-	for( unsigned int i = 0; i < MAX_NUM_SURFELS; i++ ) {
+	for( unsigned int i = 0; i < NodeValue::num_surfels_; i++ ) {
 
 		current->value_.surfels_[i].agglomerated_shape_texture_features_ = current->value_.surfels_[i].simple_shape_texture_features_;
 
@@ -2325,7 +2325,7 @@ void MultiResolutionSurfelMap::clearAssociationDist() {
 
 
 inline void MultiResolutionSurfelMap::clearAssociationDistFunction(spatialaggregate::OcTreeNode<float, NodeValue>* current, spatialaggregate::OcTreeNode<float, NodeValue>* next, void* data) {
-	for ( unsigned int i = 0; i < MAX_NUM_SURFELS; i++ ) {
+	for ( unsigned int i = 0; i < NodeValue::num_surfels_; i++ ) {
 		current->value_.surfels_[i].assocDist_ = std::numeric_limits<float>::max();
 	}
 }
@@ -2333,7 +2333,7 @@ inline void MultiResolutionSurfelMap::clearAssociationDistFunction(spatialaggreg
 
 inline void MultiResolutionSurfelMap::setApplyUpdateFunction( spatialaggregate::OcTreeNode< float, NodeValue >* current, spatialaggregate::OcTreeNode< float, NodeValue >* next, void* data ) {
 	bool v = *((bool*) data);
-	for ( unsigned int i = 0; i < MAX_NUM_SURFELS; i++ ) {
+	for ( unsigned int i = 0; i < NodeValue::num_surfels_; i++ ) {
 		if( current->value_.surfels_[i].num_points_ >= MIN_SURFEL_POINTS ) {
 			current->value_.surfels_[i].applyUpdate_ = v;
 		}
@@ -2342,14 +2342,14 @@ inline void MultiResolutionSurfelMap::setApplyUpdateFunction( spatialaggregate::
 
 inline void MultiResolutionSurfelMap::setUpToDateFunction( spatialaggregate::OcTreeNode< float, NodeValue >* current, spatialaggregate::OcTreeNode< float, NodeValue >* next, void* data ) {
 	bool v = *((bool*) data);
-	for ( unsigned int i = 0; i < MAX_NUM_SURFELS; i++ ) {
+	for ( unsigned int i = 0; i < NodeValue::num_surfels_; i++ ) {
 		current->value_.surfels_[i].up_to_date_ = v;
 	}
 }
 
 
 inline void MultiResolutionSurfelMap::clearUnstableSurfelsFunction( spatialaggregate::OcTreeNode< float, NodeValue >* current, spatialaggregate::OcTreeNode< float, NodeValue >* next, void* data ) {
-	for ( unsigned int i = 0; i < MAX_NUM_SURFELS; i++ ) {
+	for ( unsigned int i = 0; i < NodeValue::num_surfels_; i++ ) {
 		if( current->value_.surfels_[i].num_points_ < MIN_SURFEL_POINTS ) {
 			// reinitialize
 			current->value_.surfels_[i].up_to_date_ = false;
@@ -2463,7 +2463,7 @@ std::vector< unsigned int > MultiResolutionSurfelMap::findInliers( const std::ve
 		Eigen::Vector4f pos4f = pos.block<4,1>(0,0).cast<float>();
 
 		// lookup node for point
-		spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n = octree_->root_->findRepresentative( pos4f, maxDepth );
+		spatialaggregate::OcTreeNode< float, NodeValue >* n = octree_->root_->findRepresentative( pos4f, maxDepth );
 
 		Surfel* surfel = n->value_.getSurfel( viewDirection );
 		if( surfel->num_points_ > MIN_SURFEL_POINTS ) {
@@ -2525,7 +2525,7 @@ inline void MultiResolutionSurfelMap::visualize3DColorDistributionFunction( spat
 
 
 	// generate markers for histogram surfels
-	for ( unsigned int i = 0; i < 6; i++ ) {
+	for ( unsigned int i = 0; i < NodeValue::num_surfels_; i++ ) {
 
 		if( info->viewDir >= 0 && info->viewDir != i )
 			continue;
@@ -2831,7 +2831,7 @@ void MultiResolutionSurfelMap::visualize3DColorDistributionWithNormalsFunction( 
 
 
 	// generate markers for histogram surfels
-	for ( unsigned int i = 0; i < 6; i++ ) {
+	for ( unsigned int i = 0; i < NodeValue::num_surfels_; i++ ) {
 
 		if( info->viewDir >= 0 && info->viewDir != i )
 			continue;
@@ -3069,7 +3069,7 @@ inline void MultiResolutionSurfelMap::visualizeMeansFunction( spatialaggregate::
 	Eigen::Matrix< float, 4, 1 > maxPos = current->getMaxPosition();
 
 
-	for ( unsigned int i = 0; i < 6; i++ ) {
+	for ( unsigned int i = 0; i < NodeValue::num_surfels_; i++ ) {
 
 		if( info->viewDir >= 0 && info->viewDir != i )
 			continue;
@@ -3145,7 +3145,7 @@ inline void MultiResolutionSurfelMap::visualizeContoursFunction( spatialaggregat
 	Eigen::Matrix< float, 4, 1 > maxPos = current->getMaxPosition();
 
 
-	for ( unsigned int i = 0; i < 6; i++ ) {
+	for ( unsigned int i = 0; i < NodeValue::num_surfels_; i++ ) {
 
 		if( info->viewDir >= 0 && info->viewDir != i )
 			continue;
@@ -3287,7 +3287,7 @@ inline void MultiResolutionSurfelMap::visualizeNormalsFunction( spatialaggregate
 	if( info->depth >= 0 && current->depth_ != info->depth )
 		return;
 
-	for ( unsigned int i = 0; i < 6; i++ ) {
+	for ( unsigned int i = 0; i < NodeValue::num_surfels_; i++ ) {
 
 		if( info->viewDir >= 0 && info->viewDir != i )
 			continue;
@@ -3368,7 +3368,7 @@ inline void MultiResolutionSurfelMap::visualizeSimilarityFunction( spatialaggreg
 
 	// generate markers for histogram surfels
 	float minDist = std::numeric_limits<float>::max();
-	for ( unsigned int i = 0; i < 6; i++ ) {
+	for ( unsigned int i = 0; i < NodeValue::num_surfels_; i++ ) {
 
 		if( info->viewDir >= 0 && info->viewDir != i )
 			continue;
@@ -3446,7 +3446,7 @@ inline void MultiResolutionSurfelMap::visualizeBordersFunction( spatialaggregate
 	if( current->depth_ != info->depth )
 		return;
 
-	for ( unsigned int i = 0; i < 6; i++ ) {
+	for ( unsigned int i = 0; i < NodeValue::num_surfels_; i++ ) {
 
 		if( info->viewDir >= 0 && info->viewDir != i )
 			continue;
@@ -3514,7 +3514,7 @@ std::istream& operator>>( std::istream& os, Eigen::Matrix< T, rows, cols >& m ) 
 
 std::ostream& operator<<( std::ostream& os, MultiResolutionSurfelMap::NodeValue& v ) {
 
-	for ( int i = 0; i < MAX_NUM_SURFELS; i++ ) {
+	for ( int i = 0; i < MultiResolutionSurfelMap::NodeValue::num_surfels_; i++ ) {
 		os << v.surfels_[i].initial_view_dir_;
 		os << v.surfels_[i].first_view_dir_;
 		os.write( (char*) &v.surfels_[i].num_points_, sizeof(double) );
@@ -3537,7 +3537,7 @@ std::ostream& operator<<( std::ostream& os, MultiResolutionSurfelMap::NodeValue&
 
 std::istream& operator>>( std::istream& os, MultiResolutionSurfelMap::NodeValue& v ) {
 
-	for ( int i = 0; i < MAX_NUM_SURFELS; i++ ) {
+	for ( int i = 0; i < MultiResolutionSurfelMap::NodeValue::num_surfels_; i++ ) {
 		os >> v.surfels_[i].initial_view_dir_;
 		os >> v.surfels_[i].first_view_dir_;
 		os.read( (char*) &v.surfels_[i].num_points_, sizeof(double) );
@@ -3604,7 +3604,7 @@ std::istream& operator>>( std::istream& os, spatialaggregate::OcTreeNode< float,
 void MultiResolutionSurfelMap::save( const std::string& filename ) {
 
 	// create downsampling map for the target
-	algorithm::OcTreeSamplingMap< float, MultiResolutionSurfelMap::NodeValue > samplingMap = algorithm::downsampleOcTree( *octree_, false, octree_->max_depth_ );
+	algorithm::OcTreeSamplingMap< float, NodeValue > samplingMap = algorithm::downsampleOcTree( *octree_, false, octree_->max_depth_ );
 
 	std::ofstream outfile( filename.c_str(), std::ios::out | std::ios::binary );
 
@@ -3618,7 +3618,7 @@ void MultiResolutionSurfelMap::save( const std::string& filename ) {
 		int numNodes = samplingMap[i].size();
 		outfile.write( (char*) &numNodes, sizeof(int) );
 
-		for ( std::list< spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* >::iterator it = samplingMap[i].begin(); it != samplingMap[i].end(); ++it ) {
+		for ( std::list< spatialaggregate::OcTreeNode< float, NodeValue >* >::iterator it = samplingMap[i].begin(); it != samplingMap[i].end(); ++it ) {
 			outfile << *(*it);
 		}
 	}
@@ -3648,14 +3648,14 @@ void MultiResolutionSurfelMap::load( const std::string& filename ) {
 
 		for ( int j = 0; j < numNodesOnDepth; j++ ) {
 
-			spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* node = octree_->allocator_->allocateNode();
+			spatialaggregate::OcTreeNode< float, NodeValue >* node = octree_->allocator_->allocateNode();
 			octree_->acquire( node );
 
 			infile >> ( *node );
 
 			// insert octree node into the tree
 			// start at root and traverse the tree until we find an empty leaf
-			spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n = octree_->root_;
+			spatialaggregate::OcTreeNode< float, NodeValue >* n = octree_->root_;
 
 			if ( !n ) {
 				node->parent_ = NULL;
@@ -3663,7 +3663,7 @@ void MultiResolutionSurfelMap::load( const std::string& filename ) {
 			} else {
 
 				// search for parent
-				spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n2 = n;
+				spatialaggregate::OcTreeNode< float, NodeValue >* n2 = n;
 				while ( n2 ) {
 					n = n2;
 					n2 = n->children_[n->getOctant( node->pos_key_ )];
@@ -3685,13 +3685,13 @@ void MultiResolutionSurfelMap::load( const std::string& filename ) {
 }
 
 
-void MultiResolutionSurfelMap::indexNodesRecursive( spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* node, int minDepth, int maxDepth, bool includeBranchingNodes ) {
+void MultiResolutionSurfelMap::indexNodesRecursive( spatialaggregate::OcTreeNode< float, NodeValue >* node, int minDepth, int maxDepth, bool includeBranchingNodes ) {
 
 	if( node->depth_ >= minDepth && node->depth_ <= maxDepth && ( includeBranchingNodes || node->type_ != spatialaggregate::OCTREE_BRANCHING_NODE ) ) {
 
 		bool hasValidSurfel = true;
 //		bool hasValidSurfel = false;
-//		for( unsigned int i = 0; i < MAX_NUM_SURFELS; i++ )
+//		for( unsigned int i = 0; i < NodeValue::num_surfels_; i++ )
 //			if( node->value_.surfels_[i].num_points_ >= MIN_SURFEL_POINTS )
 //				hasValidSurfel = true;
 
@@ -3720,10 +3720,10 @@ void MultiResolutionSurfelMap::indexNodes( int minDepth, int maxDepth, bool incl
 }
 
 
-unsigned int MultiResolutionSurfelMap::numSurfelsRecursive( spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* node ) {
+unsigned int MultiResolutionSurfelMap::numSurfelsRecursive( spatialaggregate::OcTreeNode< float, NodeValue >* node ) {
 
 	unsigned int count = 0;
-	for( unsigned int i = 0; i < MAX_NUM_SURFELS; i++ ) {
+	for( unsigned int i = 0; i < NodeValue::num_surfels_; i++ ) {
 		if( node->value_.surfels_[i].num_points_ > MIN_SURFEL_POINTS ) {
 			count++;
 		}
@@ -3799,7 +3799,7 @@ void MultiResolutionSurfelMap::buildSurfelPairsHashmap() {
     }
 }
 
-inline bool MultiResolutionSurfelMap::buildSurfelPair( MultiResolutionSurfelMap::SurfelPairSignature & signature, const Surfel& src, const Surfel& dst ) {
+inline bool MultiResolutionSurfelMap::buildSurfelPair( SurfelPairSignature & signature, const Surfel& src, const Surfel& dst ) {
 
     // surflet pair relation as in "model globally match locally"
     Eigen::Vector3d p1 = src.mean_.block<3,1>(0,0);
@@ -3870,10 +3870,10 @@ inline bool MultiResolutionSurfelMap::buildSurfelPair( MultiResolutionSurfelMap:
 
 
 int MultiResolutionSurfelMap::buildSurfelPairsForSurfel(
-        spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* node,
+        spatialaggregate::OcTreeNode< float, NodeValue >* node,
         Surfel* srcSurfel,
         int surfelIdx,
-        std::vector< spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* > & nodes,
+        std::vector< spatialaggregate::OcTreeNode< float, NodeValue >* > & nodes,
         SurfelPairVector & pairs,
         float & maxDist,
         float samplingRate
@@ -3888,9 +3888,9 @@ int MultiResolutionSurfelMap::buildSurfelPairsForSurfel(
 
     float maxResDist = node->resolution() * params_.surfelPairMaxDistResFactor_;
 
-    for ( std::vector< spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* >::iterator nodeIt =
+    for ( std::vector< spatialaggregate::OcTreeNode< float, NodeValue >* >::iterator nodeIt =
           nodes.begin(); nodeIt < nodes.end(); std::advance( nodeIt, step ) ) {
-        spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* currentNode = *nodeIt;
+        spatialaggregate::OcTreeNode< float, NodeValue >* currentNode = *nodeIt;
         if ( currentNode == node )
             continue;
 
@@ -3929,17 +3929,21 @@ int MultiResolutionSurfelMap::buildSurfelPairsForSurfel(
 }
 
 
-
+template< typename TNodeValue >
 class BuildSurfelPairsFunctor {
 public:
+
+	typedef TNodeValue NodeValue;
+	typedef typename TNodeValue::Surfel Surfel;
+
     BuildSurfelPairsFunctor(
             MultiResolutionSurfelMap* map,
-            tbb::concurrent_vector< std::vector< MultiResolutionSurfelMap::SurfelPair, Eigen::aligned_allocator< MultiResolutionSurfelMap::SurfelPair > > >* surfel_pairs,
+            tbb::concurrent_vector< std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > > >* surfel_pairs,
             tbb::concurrent_vector< Surfel* >* reference_surfels,
-//            std::vector< MultiResolutionSurfelMap::SurfelPairVector >* surfel_pairs,
+//            std::vector< SurfelPairVector >* surfel_pairs,
 //            std::vector< Surfel* >* reference_surfels,
 //            tbb::concurrent_unordered_map< uint64, unsigned int >* surfel_pair_keys,
-            std::vector< spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* >* nodes,
+            std::vector< spatialaggregate::OcTreeNode< float, NodeValue >* >* nodes,
             tbb::atomic<float>* max_dist,
             const float samplingRate,
             const int processDepth
@@ -3960,7 +3964,7 @@ public:
             (*this)((*nodes_)[i]);
     }
 
-    void operator()( spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >*& node ) const {
+    void operator()( spatialaggregate::OcTreeNode< float, NodeValue >*& node ) const {
 
         float maxDist = -std::numeric_limits<float>::max();
 
@@ -3968,7 +3972,7 @@ public:
             return;
 
         // loop around the surfels and build surfel pair relations
-        for ( unsigned int i = 0; i < MAX_NUM_SURFELS; i++ ) {
+        for ( unsigned int i = 0; i < NodeValue::num_surfels_; i++ ) {
             if( node->value_.surfels_[i].num_points_ >= MIN_SURFEL_POINTS ) {
             	Surfel* currentRefSurfel = &(node->value_.surfels_[i]);
                 unsigned int currentSurfelIdx = i;
@@ -3978,27 +3982,27 @@ public:
                      std::isnan( currentRefSurfel->normal_(2) ) )
                     continue;
 
-                tbb::concurrent_vector< Surfel* >::iterator refSurfelIt = reference_surfels_->push_back( currentRefSurfel );
+                typename tbb::concurrent_vector< Surfel* >::iterator refSurfelIt = reference_surfels_->push_back( currentRefSurfel );
 //                unsigned int refIdx = reference_surfels_->size();
 //                reference_surfels_->push_back( currentRefSurfel );
                 unsigned int refIdx = refSurfelIt - reference_surfels_->begin();
                 currentRefSurfel->idx_ = refIdx;
 
-                tbb::concurrent_vector< std::vector<MultiResolutionSurfelMap::SurfelPair, Eigen::aligned_allocator< MultiResolutionSurfelMap::SurfelPair > > >::iterator pairit =
+                tbb::concurrent_vector< std::vector<SurfelPair, Eigen::aligned_allocator< SurfelPair > > >::iterator pairit =
                         surfel_pairs_->grow_by( 1 );
 
-//                surfel_pairs_->resize( surfel_pairs_->size() + 1, MultiResolutionSurfelMap::SurfelPairVector() );
+//                surfel_pairs_->resize( surfel_pairs_->size() + 1, SurfelPairVector() );
 
-                MultiResolutionSurfelMap::SurfelPairVector & pairs = *pairit;
-//                MultiResolutionSurfelMap::SurfelPairVector & pairs = (*surfel_pairs_)[refIdx]; //*( surfel_pairs_->rbegin() );
+                SurfelPairVector & pairs = *pairit;
+//                SurfelPairVector & pairs = (*surfel_pairs_)[refIdx]; //*( surfel_pairs_->rbegin() );
 
                 map_->buildSurfelPairsForSurfel( node, currentRefSurfel, currentSurfelIdx,
                                                                      *nodes_, pairs, maxDist/*, samplingRate_*/ );
 
 
-//                for ( std::vector< spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* >::iterator nodeIt =
+//                for ( std::vector< spatialaggregate::OcTreeNode< float, NodeValue >* >::iterator nodeIt =
 //                      nodes_->begin(); nodeIt != nodes_->end(); nodeIt ) {
-//                    spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* currentNode = *nodeIt;
+//                    spatialaggregate::OcTreeNode< float, NodeValue >* currentNode = *nodeIt;
 //                    if ( currentNode == node )
 //                        continue;
 
@@ -4045,12 +4049,12 @@ public:
     }
 
     MultiResolutionSurfelMap* map_;
-    tbb::concurrent_vector< std::vector< MultiResolutionSurfelMap::SurfelPair, Eigen::aligned_allocator< MultiResolutionSurfelMap::SurfelPair > > >* surfel_pairs_;
+    tbb::concurrent_vector< std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > > >* surfel_pairs_;
     tbb::concurrent_vector< Surfel* >* reference_surfels_;
-//    std::vector< MultiResolutionSurfelMap::SurfelPairVector >* surfel_pairs_;
+//    std::vector< SurfelPairVector >* surfel_pairs_;
 //    std::vector< Surfel* >* reference_surfels_;
 //    tbb::concurrent_unordered_map< uint64, unsigned int >* surfel_pair_keys_;
-    std::vector< spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* >* nodes_;
+    std::vector< spatialaggregate::OcTreeNode< float, NodeValue >* >* nodes_;
     tbb::atomic<float>* max_dist_;
     int processDepth_;
     mutable int totalPairs_;
@@ -4058,7 +4062,7 @@ public:
 };
 
 
-void MultiResolutionSurfelMap::buildSurfelPairsOnDepthParallel( std::vector< spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* >& nodes, int processDepth, float & maxDist ) {
+void MultiResolutionSurfelMap::buildSurfelPairsOnDepthParallel( std::vector< spatialaggregate::OcTreeNode< float, NodeValue >* >& nodes, int processDepth, float & maxDist ) {
 
 
     tbb::concurrent_vector< std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > > > surfel_pairs_on_depth;
@@ -4086,7 +4090,7 @@ void MultiResolutionSurfelMap::buildSurfelPairsOnDepthParallel( std::vector< spa
     reference_surfels_on_depth.reserve( (int) samplingRate * (float)nodes.size() );
     surfel_pairs_on_depth.reserve( (int) samplingRate * (float)nodes.size() );
 
-    BuildSurfelPairsFunctor bf( this, &surfel_pairs_on_depth, &reference_surfels_on_depth, &nodes, &max_dist, samplingRate, processDepth );
+    BuildSurfelPairsFunctor< NodeValue > bf( this, &surfel_pairs_on_depth, &reference_surfels_on_depth, &nodes, &max_dist, samplingRate, processDepth );
 
     LOG_STREAM("Processing depth [" << processDepth << "], nodes: " << nodes.size() );
 

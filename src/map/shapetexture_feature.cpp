@@ -35,16 +35,13 @@
  *
  */
 
-#include "mrsmap/map/shapetexture_feature.h"
+#include <mrsmap/map/shapetexture_feature.h>
 
-#include <mrsmap/map/multiresolution_surfel_map.h>
-
+#include <mrsmap/map/surfel.h>
 
 using namespace mrsmap;
 
-
 ShapeTextureTable* ShapeTextureTable::instance_ = NULL;
-
 
 void ShapeTextureTable::initialize() {
 
@@ -135,7 +132,8 @@ void ShapeTextureTable::initialize() {
 
 
 
-void ShapeTextureFeature::add( Surfel* src, Surfel* dst, float weight ) {
+
+void ShapeTextureFeature::add( GSurfel* src, GSurfel* dst, float weight ) {
 
 	// surflet pair relation as in "model globally match locally"
 	const Eigen::Vector3d p1 = src->mean_.block<3,1>(0,0);
@@ -166,14 +164,3 @@ void ShapeTextureFeature::add( Surfel* src, Surfel* dst, float weight ) {
 	num_points_ += weight;
 
 }
-
-
-void ShapeTextureFeature::add( const ShapeTextureFeature& feature, float weight ) {
-
-	shape_ += weight*feature.shape_;
-	texture_ += weight*feature.texture_;
-	num_points_ += weight*feature.num_points_;
-
-}
-
-

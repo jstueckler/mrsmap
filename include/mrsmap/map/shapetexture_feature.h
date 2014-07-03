@@ -42,7 +42,6 @@
 #include <Eigen/Eigen>
 
 
-
 #define NUM_SHAPE_BINS 3
 #define NUM_TEXTURE_BINS 3
 
@@ -55,8 +54,7 @@
 
 namespace mrsmap {
 
-	class Surfel;
-	class SingleSurfel;
+	class GSurfel;
 
 	class ShapeTextureFeature {
 	public:
@@ -74,8 +72,13 @@ namespace mrsmap {
 			num_points_ = 0.f;
 		}
 
-		void add( Surfel* src, Surfel* dst, float weight );
-		void add( const ShapeTextureFeature& feature, float weight );
+		void add( GSurfel* src, GSurfel* dst, float weight );
+
+		void add( const ShapeTextureFeature& feature, float weight ) {
+			shape_ += weight*feature.shape_;
+			texture_ += weight*feature.texture_;
+			num_points_ += weight*feature.num_points_;
+		}
 
 		inline float textureDistance( const ShapeTextureFeature& feature ) const {
 			return (texture_ - feature.texture_).squaredNorm();
@@ -125,6 +128,8 @@ namespace mrsmap {
 	};
 
 };
+
+
 
 #endif /* SHAPETEXTURE_FEATURE_H_ */
 

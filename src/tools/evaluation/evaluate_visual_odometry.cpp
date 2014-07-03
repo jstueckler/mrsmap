@@ -46,6 +46,7 @@
 
 #include <mrsmap/map/multiresolution_surfel_map.h>
 #include <mrsmap/registration/multiresolution_surfel_registration.h>
+//#include <mrsmap/registration/multiresolution_soft_surfel_registration.h>
 
 #include <mrsmap/visualization/visualization_map.h>
 #include <mrsmap/utilities/utilities.h>
@@ -198,6 +199,7 @@ public:
 
 //			for( unsigned int i = 0; i < 20; i++ )
 //				reg.estimateTransformation( *lastFrameMap_, *currFrameMap, transform, 32.f * currFrameMap->min_resolution_, currFrameMap->min_resolution_, corrSrc, corrTgt, 10, 0, 0 );
+//			reg.estimateTransformation( *lastFrameMap_, *currFrameMap, transform, 32.f * currFrameMap->min_resolution_, currFrameMap->min_resolution_, corrSrc, corrTgt, 100 );
 			reg.estimateTransformation( *lastFrameMap_, *currFrameMap, transform, 32.f * currFrameMap->min_resolution_, currFrameMap->min_resolution_, corrSrc, corrTgt, 100, 0, 5 );
 
 

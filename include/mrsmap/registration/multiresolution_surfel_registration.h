@@ -66,6 +66,8 @@ namespace mrsmap {
 
 			bool registerSurfels_, registerFeatures_;
 
+			bool softSurfelAssociation_;
+
 			bool use_prior_pose_;
 			Eigen::Matrix< double, 6, 1 > prior_pose_mean_;
 			Eigen::Matrix< double, 6, 6 > prior_pose_invcov_;
@@ -163,14 +165,14 @@ namespace mrsmap {
 		public:
 			SurfelAssociation()
 			: n_src_(NULL), src_(NULL), src_idx_(0), n_dst_(NULL), dst_(NULL), dst_idx_(0), match(0), loglikelihood_(0.0) {}
-			SurfelAssociation( spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n_src, Surfel* src, unsigned int src_idx, spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n_dst, Surfel* dst, unsigned int dst_idx )
+			SurfelAssociation( spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n_src, MultiResolutionSurfelMap::Surfel* src, unsigned int src_idx, spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n_dst, MultiResolutionSurfelMap::Surfel* dst, unsigned int dst_idx )
 			: n_src_(n_src), src_(src), src_idx_(src_idx), n_dst_(n_dst), dst_(dst), dst_idx_(dst_idx), match(1), loglikelihood_(0.0) {}
 			~SurfelAssociation() {}
 
 			void revert() {
 
 				spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n_tmp_ = n_src_;
-				Surfel* tmp_ = src_;
+				MultiResolutionSurfelMap::Surfel* tmp_ = src_;
 				unsigned int tmp_idx_ = src_idx_;
 
 				n_src_ = n_dst_;
@@ -184,10 +186,10 @@ namespace mrsmap {
 			}
 
 			spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n_src_;
-			Surfel* src_;
+			MultiResolutionSurfelMap::Surfel* src_;
 			unsigned int src_idx_;
 			spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n_dst_;
-			Surfel* dst_;
+			MultiResolutionSurfelMap::Surfel* dst_;
 			unsigned int dst_idx_;
 
 			Eigen::Matrix< double, 6, 1 > df_dx;
@@ -258,15 +260,15 @@ namespace mrsmap {
 
 			double loglikelihood_;
 
-			SurfelAssociation surfelassocs_[MAX_NUM_SURFELS];
+			SurfelAssociation surfelassocs_[MultiResolutionSurfelMap::NodeValue::num_surfels_];
 
 		};
 
 		typedef std::vector< NodeLogLikelihood > NodeLogLikelihoodList;
 
 
-		void associateMapsBreadthFirst( SurfelAssociationList& surfelAssociations, MultiResolutionSurfelMap& source, MultiResolutionSurfelMap& target, algorithm::OcTreeSamplingVectorMap< float, MultiResolutionSurfelMap::NodeValue >& targetSamplingMap, Eigen::Matrix4d& transform, double minResolution, double maxResolution );
 		void associateMapsBreadthFirstParallel( SurfelAssociationList& surfelAssociations, MultiResolutionSurfelMap& source, MultiResolutionSurfelMap& target, algorithm::OcTreeSamplingVectorMap< float, MultiResolutionSurfelMap::NodeValue >& targetSamplingMap, Eigen::Matrix4d& transform, double minResolution, double maxResolution, double searchDistFactor, double maxSearchDist, bool useFeatures );
+
 
 		void associateNodeListParallel( SurfelAssociationList& surfelAssociations, MultiResolutionSurfelMap& source, MultiResolutionSurfelMap& target, std::vector< spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* >& nodes, int processDepth, Eigen::Matrix4d& transform, double searchDistFactor, double maxSearchDist, bool useFeatures );
 

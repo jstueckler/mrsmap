@@ -59,7 +59,7 @@ typedef MRCSReg::FeatureAssociationList MRCSRFAL;
 typedef MultiResolutionSurfelMap MRCSMap;
 
 
-inline Surfel* bestSurfelMatch( spatialaggregate::OcTreeNode<float, MultiResolutionSurfelMap::NodeValue>* node,
+inline MultiResolutionSurfelMap::Surfel* bestSurfelMatch( spatialaggregate::OcTreeNode<float, MultiResolutionSurfelMap::NodeValue>* node,
                                 Eigen::Vector4d & viewDir, unsigned int & surfelIndex  ) {
     const double & x = viewDir(0);
     const double & y = viewDir(1);
@@ -294,7 +294,7 @@ bool pointSeenThrough( const Eigen::Vector4f& p, const MultiResolutionSurfelMap&
 				if( markSeenThrough ) {
 					spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n2 = n;
 					while( n2 != NULL ) {
-//						for( unsigned int i = 0; i < MAX_NUM_SURFELS; i++ )
+//						for( unsigned int i = 0; i < MultiResolutionSurfelMap::NodeValue::num_surfels_; i++ )
 							n2->value_.surfels_[4].seenThrough_ = true;
 						n2 = n2->parent_;
 					}
@@ -363,15 +363,15 @@ spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* Mult
 	}
 
 	spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n_matched = NULL;
-	Surfel* srcSurfel = NULL;
-	Surfel* matchedSurfel = NULL;
+	MultiResolutionSurfelMap::Surfel* srcSurfel = NULL;
+	MultiResolutionSurfelMap::Surfel* matchedSurfel = NULL;
 	int matchedSurfelIdx = -1;
 	double bestDist = std::numeric_limits<double>::max();
 
 	// get closest node in neighbor list
-	for( unsigned int i = 0; i < MAX_NUM_SURFELS; i++ ) {
+	for( unsigned int i = 0; i < MultiResolutionSurfelMap::NodeValue::num_surfels_; i++ ) {
 
-		Surfel& surfel = node->value_.surfels_[i];
+		MultiResolutionSurfelMap::Surfel& surfel = node->value_.surfels_[i];
 
 		// border points are returned but must be handled later!
 		if( surfel.num_points_ < MIN_SURFEL_POINTS ) {
@@ -393,12 +393,12 @@ spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* Mult
 			if( (*it)->value_.border_ != node->value_.border_ )
 				continue;
 
-			Surfel* bestMatchSurfel = NULL;
+			MultiResolutionSurfelMap::Surfel* bestMatchSurfel = NULL;
 			int bestMatchSurfelIdx = -1;
 			double bestMatchDist = -1.f;
-			for( unsigned int k = 0; k < MAX_NUM_SURFELS; k++ ) {
+			for( unsigned int k = 0; k < MultiResolutionSurfelMap::NodeValue::num_surfels_; k++ ) {
 
-				const Surfel& srcSurfel2 = (*it)->value_.surfels_[k];
+				const MultiResolutionSurfelMap::Surfel& srcSurfel2 = (*it)->value_.surfels_[k];
 
 				if( srcSurfel2.num_points_ < MIN_SURFEL_POINTS ) {
 					continue;
@@ -485,7 +485,7 @@ spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* Mult
 				if(!n_dst_n)
 					continue;
 
-				Surfel* dst_n = &n_dst_n->value_.surfels_[matchedSurfelIdx];
+				MultiResolutionSurfelMap::Surfel* dst_n = &n_dst_n->value_.surfels_[matchedSurfelIdx];
 				if( dst_n->num_points_ < MIN_SURFEL_POINTS )
 					continue;
 
@@ -626,7 +626,7 @@ spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* Mult
 				if(!n_dst_n)
 					continue;
 
-				Surfel* dst_n = &n_dst_n->value_.surfels_[matchedSurfelIdx];
+				MultiResolutionSurfelMap::Surfel* dst_n = &n_dst_n->value_.surfels_[matchedSurfelIdx];
 				if( dst_n->num_points_ < MIN_SURFEL_POINTS )
 					continue;
 
@@ -744,10 +744,10 @@ bool MultiResolutionSurfelRegistration::calculateNegLogLikelihood( double& logLi
 double MultiResolutionSurfelRegistration::calculateInPlaneLogLikelihood( spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n_src, spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n_tgt, const Eigen::Matrix4d& transform, double normal_z_cov ) {
 
 	double bestLogLikelihood = 18.0;
-	for( unsigned int i = 0; i < MAX_NUM_SURFELS; i++ ) {
+	for( unsigned int i = 0; i < MultiResolutionSurfelMap::NodeValue::num_surfels_; i++ ) {
 
-		Surfel& s_src = n_src->value_.surfels_[i];
-		Surfel& s_tgt = n_tgt->value_.surfels_[i];
+		MultiResolutionSurfelMap::Surfel& s_src = n_src->value_.surfels_[i];
+		MultiResolutionSurfelMap::Surfel& s_tgt = n_tgt->value_.surfels_[i];
 
 		if( s_src.num_points_ < MIN_SURFEL_POINTS ) {
 			continue;
@@ -926,7 +926,7 @@ public:
 		// check compatibility using inverse depth parametrization
 
 		// check if a surfels exist
-		for( unsigned int i = 0; i < MAX_NUM_SURFELS; i++ ) {
+		for( unsigned int i = 0; i < MultiResolutionSurfelMap::NodeValue::num_surfels_; i++ ) {
 
 			// if image border points fall into this node, we must check the children_
 			if( !n->value_.surfels_[i].applyUpdate_ ) {
@@ -1009,7 +1009,7 @@ public:
 
 			if( surfelSrcIdx >= 0 && surfelDstIdx >= 0 ) {
 
-				const Surfel& surfel = n->value_.surfels_[surfelSrcIdx];
+				const MultiResolutionSurfelMap::Surfel& surfel = n->value_.surfels_[surfelSrcIdx];
 
 				if( surfel.num_points_ >= MIN_SURFEL_POINTS ) {
 
@@ -1034,14 +1034,14 @@ public:
 
 						// find matching surfel for the view direction, but allow to use a slightly worse fit,
 						// when it is the only one with sufficient points for matching
-						Surfel& dstSurfel = n_src->value_.surfels_[surfelDstIdx];
+						MultiResolutionSurfelMap::Surfel& dstSurfel = n_src->value_.surfels_[surfelDstIdx];
 
 						if( dstSurfel.num_points_ < MIN_SURFEL_POINTS )
 							continue;
 
 						const double dist = dir_match_src.dot( dstSurfel.initial_view_dir_ );
 
-						Surfel* bestMatchSurfel = NULL;
+						MultiResolutionSurfelMap::Surfel* bestMatchSurfel = NULL;
 						int bestMatchSurfelIdx = -1;
 						double bestMatchDist = -1.f;
 
@@ -1118,9 +1118,9 @@ public:
 			else {
 
 
-				for( unsigned int i = 0; i < MAX_NUM_SURFELS; i++ ) {
+				for( unsigned int i = 0; i < MultiResolutionSurfelMap::NodeValue::num_surfels_; i++ ) {
 
-					const Surfel& surfel = n->value_.surfels_[i];
+					const MultiResolutionSurfelMap::Surfel& surfel = n->value_.surfels_[i];
 
 					if( surfel.num_points_ < MIN_SURFEL_POINTS ) {
 						continue;
@@ -1154,12 +1154,12 @@ public:
 
 						// find matching surfel for the view direction, but allow to use a slightly worse fit,
 						// when it is the only one with sufficient points for matching
-						Surfel* bestMatchSurfel = NULL;
+						MultiResolutionSurfelMap::Surfel* bestMatchSurfel = NULL;
 						int bestMatchSurfelIdx = -1;
 						double bestMatchDist = -1.f;
-						for( unsigned int k = 0; k < MAX_NUM_SURFELS; k++ ) {
+						for( unsigned int k = 0; k < MultiResolutionSurfelMap::NodeValue::num_surfels_; k++ ) {
 
-							const Surfel& srcSurfel = n_src->value_.surfels_[k];
+							const MultiResolutionSurfelMap::Surfel& srcSurfel = n_src->value_.surfels_[k];
 
 							if( srcSurfel.num_points_ < MIN_SURFEL_POINTS )
 								continue;
@@ -1914,7 +1914,7 @@ public:
 					if(!n_dst_n)
 						continue;
 
-					Surfel* dst_n = &n_dst_n->value_.surfels_[assoc.dst_idx_];
+					MultiResolutionSurfelMap::Surfel* dst_n = &n_dst_n->value_.surfels_[assoc.dst_idx_];
 					if( dst_n->num_points_ < MIN_SURFEL_POINTS )
 						continue;
 
@@ -2621,7 +2621,7 @@ public:
 					if(!n_dst_n)
 						continue;
 
-					Surfel* dst_n = &n_dst_n->value_.surfels_[assoc.dst_idx_];
+					MultiResolutionSurfelMap::Surfel* dst_n = &n_dst_n->value_.surfels_[assoc.dst_idx_];
 					if( dst_n->num_points_ < MIN_SURFEL_POINTS )
 						continue;
 
@@ -4549,7 +4549,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationLevenbergMarquardt
 		bool retVal2 = registrationErrorFunctionLM(x_new, new_error, surfelAssociations, featureAssociations_, featureAssocMahalDist);
 		if (!retVal2)
 		{
-			std::cout << "2nd ErrorFunction for AreNo and Surfel failed\n";
+			std::cout << "2nd ErrorFunction for AreNo and MultiResolutionSurfelMap::Surfel failed\n";
 			return false;
 		}
 
@@ -5205,13 +5205,13 @@ public:
 		// only consider model surfels that are visible from the scene viewpoint under the given transformation
 
 		for( unsigned int i = 4; i <= 4; i++ ) {
-//		for( unsigned int i = 0; i < MAX_NUM_SURFELS; i++ ) {
+//		for( unsigned int i = 0; i < MultiResolutionSurfelMap::NodeValue::num_surfels_; i++ ) {
 
 			node.surfelassocs_[i].loglikelihood_ = 0.0;
 			node.surfelassocs_[i].n_dst_ = NULL;
 			node.surfelassocs_[i].dst_ = NULL;
 
-			Surfel* targetSurfel = &n->value_.surfels_[i];
+			MultiResolutionSurfelMap::Surfel* targetSurfel = &n->value_.surfels_[i];
 
 			if( targetSurfel->num_points_ < MIN_SURFEL_POINTS ) {
 				continue;
@@ -5276,9 +5276,9 @@ public:
 					spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n_src = *it;
 
 					// find best matching surfel for the view direction in the scene map
-					Surfel* bestMatchSurfel = NULL;
+					MultiResolutionSurfelMap::Surfel* bestMatchSurfel = NULL;
 					double bestMatchDist = -1.f;
-					for( unsigned int k = 0; k < MAX_NUM_SURFELS; k++ ) {
+					for( unsigned int k = 0; k < MultiResolutionSurfelMap::NodeValue::num_surfels_; k++ ) {
 
 						const double dist = dir_match_src.block<3,1>(0,0).dot( n_src->value_.surfels_[k].initial_view_dir_ );
 						if( dist > bestMatchDist ) {
@@ -5474,11 +5474,11 @@ public:
 		const Eigen::Matrix3d& cov_add = cov_add_[n->depth_];
 
 		for( unsigned int i = 4; i <= 4; i++ ) {
-//		for( unsigned int i = 0; i < MAX_NUM_SURFELS; i++ ) {
+//		for( unsigned int i = 0; i < MultiResolutionSurfelMap::NodeValue::num_surfels_; i++ ) {
 
 			if( node.surfelassocs_[i].dst_ ) {
 
-				Surfel* targetSurfel = &n->value_.surfels_[i];
+				MultiResolutionSurfelMap::Surfel* targetSurfel = &n->value_.surfels_[i];
 
 				Eigen::Vector4d pos;
 				pos.block<3,1>(0,0) = targetSurfel->mean_.block<3,1>(0,0);
@@ -5498,7 +5498,7 @@ public:
 					cov2_rotated += jac * pcov_ * jac.transpose();
 				}
 
-				Surfel* sceneSurfel = node.surfelassocs_[i].dst_;
+				MultiResolutionSurfelMap::Surfel* sceneSurfel = node.surfelassocs_[i].dst_;
 
 				Eigen::Vector3d diff_pos = sceneSurfel->mean_.block<3,1>(0,0) - pos_match_src.block<3,1>(0,0);
 
@@ -5628,12 +5628,12 @@ public:
 		spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n = node.n_;
 
 		Eigen::Vector3d viewDirection = n->getCenterPosition().cast<double>().block<3,1>(0,0) - camera_pos_;
-		const Surfel* targetSurfel = n->value_.getSurfel( viewDirection );
+		const MultiResolutionSurfelMap::Surfel* targetSurfel = n->value_.getSurfel( viewDirection );
 
-//		for( unsigned int i = 0; i < MAX_NUM_SURFELS; i++ ) {
+//		for( unsigned int i = 0; i < MultiResolutionSurfelMap::NodeValue::num_surfels_; i++ ) {
 
 //			// targetSurfel should be a surfel in the model
-//			Surfel* targetSurfel = &n->value_.surfels_[i];
+//			MultiResolutionSurfelMap::Surfel* targetSurfel = &n->value_.surfels_[i];
 
 			if( targetSurfel->num_points_ < MIN_SURFEL_POINTS ) {
 				return;
@@ -5903,9 +5903,9 @@ public:
 
 		// only consider model surfels that are visible from the scene viewpoint under the given transformation
 
-		for( unsigned int i = 0; i < MAX_NUM_SURFELS; i++ ) {
+		for( unsigned int i = 0; i < MultiResolutionSurfelMap::NodeValue::num_surfels_; i++ ) {
 
-			Surfel* modelSurfel = &n->value_.surfels_[i];
+			MultiResolutionSurfelMap::Surfel* modelSurfel = &n->value_.surfels_[i];
 
 			if( modelSurfel->num_points_ < MIN_SURFEL_POINTS ) {
 				continue;

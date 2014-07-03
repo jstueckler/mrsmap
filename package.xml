@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package>
+  <name>mrsmap</name>
+  <version>0.3.0</version>
+  <description>The mrsmap package</description>
+
+  <maintainer email="joerg.stueckler.bw@gmail.com">Jörg Stückler</maintainer>
+
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <export>
+    <cpp cflags="-I${prefix}/include -I${prefix}/src" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" />
+  </export>
+</package>

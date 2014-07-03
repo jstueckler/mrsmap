@@ -6,7 +6,7 @@
 #  Version: 0.3, 01.07.2014                                                              #
 #                                                                                         #
 ###########################################################################################
-
+ 
 
 This source package contains our implementation of Multi-Resolution Surfel Maps for
 image registration [1], object modelling and tracking [1], and SLAM [2].

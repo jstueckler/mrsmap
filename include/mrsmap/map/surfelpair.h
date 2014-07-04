@@ -160,11 +160,12 @@ namespace mrsmap {
 	/**
 	 * Signature for a surfel pair
 	 */
+	template< unsigned int MinPoints >
 	class SurfelPair {
 	public:
 		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
-		SurfelPair( GSurfel* src, GSurfel* dst, const SurfelPairSignature& signature, float weight = 0.f )
+		SurfelPair( GSurfel< MinPoints >* src, GSurfel< MinPoints >* dst, const SurfelPairSignature& signature, float weight = 0.f )
 			: src_(src), dst_(dst), signature_( signature ),   weight_( weight ) {
 
 		}
@@ -172,16 +173,16 @@ namespace mrsmap {
 		~SurfelPair() {
 		}
 
-		GSurfel* src_;
-		GSurfel* dst_;
+		GSurfel< MinPoints >* src_;
+		GSurfel< MinPoints >* dst_;
 
 		SurfelPairSignature signature_;
 
 		float weight_;
 	};
 
-	typedef std::unordered_map< SurfelPairKey, std::vector< SurfelPair* > > SurfelPairHashmap;
-	typedef std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > > SurfelPairVector;
+//	typedef std::unordered_map< SurfelPairKey, std::vector< SurfelPair* > > SurfelPairHashmap;
+//	typedef std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > > SurfelPairVector;
 
 };
 

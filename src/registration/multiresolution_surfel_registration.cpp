@@ -374,10 +374,10 @@ spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* Mult
 		MultiResolutionSurfelMap::Surfel& surfel = node->value_.surfels_[i];
 
 		// border points are returned but must be handled later!
-		if( surfel.num_points_ < MIN_SURFEL_POINTS ) {
+		if( surfel.num_points_ < MultiResolutionSurfelMap::Surfel::min_points_ ) {
 			continue;
 		}
-//		if( surfel.num_points_ < MIN_SURFEL_POINTS || !surfel.applyUpdate_ ) {
+//		if( surfel.num_points_ < MultiResolutionSurfelMap::Surfel::min_points_ || !surfel.applyUpdate_ ) {
 //			continue;
 //		}
 
@@ -400,7 +400,7 @@ spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* Mult
 
 				const MultiResolutionSurfelMap::Surfel& srcSurfel2 = (*it)->value_.surfels_[k];
 
-				if( srcSurfel2.num_points_ < MIN_SURFEL_POINTS ) {
+				if( srcSurfel2.num_points_ < MultiResolutionSurfelMap::Surfel::min_points_ ) {
 					continue;
 				}
 
@@ -486,7 +486,7 @@ spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* Mult
 					continue;
 
 				MultiResolutionSurfelMap::Surfel* dst_n = &n_dst_n->value_.surfels_[matchedSurfelIdx];
-				if( dst_n->num_points_ < MIN_SURFEL_POINTS )
+				if( dst_n->num_points_ < MultiResolutionSurfelMap::Surfel::min_points_ )
 					continue;
 
 				Eigen::Vector3d centerDiff_n = n_dst_n->getCenterPosition().block<3,1>(0,0).cast<double>() - pos_match_src.block<3,1>(0,0);
@@ -627,7 +627,7 @@ spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* Mult
 					continue;
 
 				MultiResolutionSurfelMap::Surfel* dst_n = &n_dst_n->value_.surfels_[matchedSurfelIdx];
-				if( dst_n->num_points_ < MIN_SURFEL_POINTS )
+				if( dst_n->num_points_ < MultiResolutionSurfelMap::Surfel::min_points_ )
 					continue;
 
 				Eigen::Vector3d centerDiff_n = n_dst_n->getCenterPosition().block<3,1>(0,0).cast<double>() - pos_match_src.block<3,1>(0,0);
@@ -749,11 +749,11 @@ double MultiResolutionSurfelRegistration::calculateInPlaneLogLikelihood( spatial
 		MultiResolutionSurfelMap::Surfel& s_src = n_src->value_.surfels_[i];
 		MultiResolutionSurfelMap::Surfel& s_tgt = n_tgt->value_.surfels_[i];
 
-		if( s_src.num_points_ < MIN_SURFEL_POINTS ) {
+		if( s_src.num_points_ < MultiResolutionSurfelMap::Surfel::min_points_ ) {
 			continue;
 		}
 
-		if( s_tgt.num_points_ < MIN_SURFEL_POINTS ) {
+		if( s_tgt.num_points_ < MultiResolutionSurfelMap::Surfel::min_points_ ) {
 			continue;
 		}
 
@@ -937,7 +937,7 @@ public:
 //				continue;
 //			}
 
-			if( n->value_.surfels_[i].num_points_ < MIN_SURFEL_POINTS ) {
+			if( n->value_.surfels_[i].num_points_ < MultiResolutionSurfelMap::Surfel::min_points_ ) {
 				continue;
 			}
 
@@ -1011,7 +1011,7 @@ public:
 
 				const MultiResolutionSurfelMap::Surfel& surfel = n->value_.surfels_[surfelSrcIdx];
 
-				if( surfel.num_points_ >= MIN_SURFEL_POINTS ) {
+				if( surfel.num_points_ >= MultiResolutionSurfelMap::Surfel::min_points_ ) {
 
 					Eigen::Vector4d pos;
 					pos.block<3,1>(0,0) = surfel.mean_.block<3,1>(0,0);
@@ -1036,7 +1036,7 @@ public:
 						// when it is the only one with sufficient points for matching
 						MultiResolutionSurfelMap::Surfel& dstSurfel = n_src->value_.surfels_[surfelDstIdx];
 
-						if( dstSurfel.num_points_ < MIN_SURFEL_POINTS )
+						if( dstSurfel.num_points_ < MultiResolutionSurfelMap::Surfel::min_points_ )
 							continue;
 
 						const double dist = dir_match_src.dot( dstSurfel.initial_view_dir_ );
@@ -1122,7 +1122,7 @@ public:
 
 					const MultiResolutionSurfelMap::Surfel& surfel = n->value_.surfels_[i];
 
-					if( surfel.num_points_ < MIN_SURFEL_POINTS ) {
+					if( surfel.num_points_ < MultiResolutionSurfelMap::Surfel::min_points_ ) {
 						continue;
 					}
 
@@ -1161,7 +1161,7 @@ public:
 
 							const MultiResolutionSurfelMap::Surfel& srcSurfel = n_src->value_.surfels_[k];
 
-							if( srcSurfel.num_points_ < MIN_SURFEL_POINTS )
+							if( srcSurfel.num_points_ < MultiResolutionSurfelMap::Surfel::min_points_ )
 								continue;
 
 							const double dist = dir_match_src.dot( srcSurfel.initial_view_dir_ );
@@ -1915,7 +1915,7 @@ public:
 						continue;
 
 					MultiResolutionSurfelMap::Surfel* dst_n = &n_dst_n->value_.surfels_[assoc.dst_idx_];
-					if( dst_n->num_points_ < MIN_SURFEL_POINTS )
+					if( dst_n->num_points_ < MultiResolutionSurfelMap::Surfel::min_points_ )
 						continue;
 
 					Eigen::Vector3d centerDiff_n = n_dst_n->getCenterPosition().block<3,1>(0,0).cast<double>() - pos_src.block<3,1>(0,0);
@@ -2622,7 +2622,7 @@ public:
 						continue;
 
 					MultiResolutionSurfelMap::Surfel* dst_n = &n_dst_n->value_.surfels_[assoc.dst_idx_];
-					if( dst_n->num_points_ < MIN_SURFEL_POINTS )
+					if( dst_n->num_points_ < MultiResolutionSurfelMap::Surfel::min_points_ )
 						continue;
 
 					Eigen::Vector3d centerDiff_n = n_dst_n->getCenterPosition().block<3,1>(0,0).cast<double>() - pos_src.block<3,1>(0,0);
@@ -5213,7 +5213,7 @@ public:
 
 			MultiResolutionSurfelMap::Surfel* targetSurfel = &n->value_.surfels_[i];
 
-			if( targetSurfel->num_points_ < MIN_SURFEL_POINTS ) {
+			if( targetSurfel->num_points_ < MultiResolutionSurfelMap::Surfel::min_points_ ) {
 				continue;
 			}
 
@@ -5290,7 +5290,7 @@ public:
 
 					// do only associate on the same resolution
 					// no match? use maximum distance log likelihood for this surfel
-					if( bestMatchSurfel->num_points_ < MIN_SURFEL_POINTS ) {
+					if( bestMatchSurfel->num_points_ < MultiResolutionSurfelMap::Surfel::min_points_ ) {
 						continue;
 					}
 
@@ -5635,7 +5635,7 @@ public:
 //			// targetSurfel should be a surfel in the model
 //			MultiResolutionSurfelMap::Surfel* targetSurfel = &n->value_.surfels_[i];
 
-			if( targetSurfel->num_points_ < MIN_SURFEL_POINTS ) {
+			if( targetSurfel->num_points_ < MultiResolutionSurfelMap::Surfel::min_points_ ) {
 				return;
 			}
 
@@ -5907,7 +5907,7 @@ public:
 
 			MultiResolutionSurfelMap::Surfel* modelSurfel = &n->value_.surfels_[i];
 
-			if( modelSurfel->num_points_ < MIN_SURFEL_POINTS ) {
+			if( modelSurfel->num_points_ < MultiResolutionSurfelMap::Surfel::min_points_ ) {
 				continue;
 			}
 

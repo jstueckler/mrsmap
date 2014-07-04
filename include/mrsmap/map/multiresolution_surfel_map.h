@@ -109,8 +109,8 @@ namespace mrsmap {
 	{
 	public:
 
-		typedef GNodeValue< GSurfel, 1 > NodeValue;
-		typedef GSurfel Surfel;
+		typedef GNodeValue< GSurfel< 1 >, 1 > NodeValue;
+		typedef GSurfel< 1 > Surfel;
 
 		class Params {
 		public:
@@ -263,16 +263,16 @@ namespace mrsmap {
 		std::vector< unsigned int > findInliers( const std::vector< unsigned int >& indices, const pcl::PointCloud<pcl::PointXYZRGB>& cloud, int maxDepth );
 
 
-		inline bool buildSurfelPair( SurfelPairSignature & signature, const Surfel& src, const Surfel& dst );
-		int buildSurfelPairsForSurfel( spatialaggregate::OcTreeNode< float, NodeValue >* node, Surfel* srcSurfel, int surfelIdx, std::vector< spatialaggregate::OcTreeNode< float, NodeValue >* > & nodes, std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > > & pairs, float & maxDist, float samplingRate = 1.f );
-
-	    void buildSurfelPairs();
-
-	    void buildSurfelPairsHashmap();
-
-	    void buildSurfelPairsOnDepthParallel( std::vector< spatialaggregate::OcTreeNode< float, NodeValue >* >& nodes, int processDepth, float & maxDist );
-
-	    void buildSurfelPairsHashmapOnDepth( int processDepth  );
+//		inline bool buildSurfelPair( SurfelPairSignature & signature, const Surfel& src, const Surfel& dst );
+//		int buildSurfelPairsForSurfel( spatialaggregate::OcTreeNode< float, NodeValue >* node, Surfel* srcSurfel, int surfelIdx, std::vector< spatialaggregate::OcTreeNode< float, NodeValue >* > & nodes, std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > > & pairs, float & maxDist, float samplingRate = 1.f );
+//
+//	    void buildSurfelPairs();
+//
+//	    void buildSurfelPairsHashmap();
+//
+//	    void buildSurfelPairsOnDepthParallel( std::vector< spatialaggregate::OcTreeNode< float, NodeValue >* >& nodes, int processDepth, float & maxDist );
+//
+//	    void buildSurfelPairsHashmapOnDepth( int processDepth  );
 
 	    void buildSamplingMap();
 
@@ -345,11 +345,11 @@ namespace mrsmap {
 		boost::shared_ptr< flann::Index< flann::HammingPopcnt< unsigned char > > > lsh_index_;
 
 
-		// key is feature descriptor, value is index of surfel pairs list in all_surfel_pairs
-		std::vector< SurfelPairHashmap > surfel_pair_list_map_;
-
-		// list of surfel pairs for reference surfel
-		std::vector< std::vector< SurfelPairVector > > all_surfel_pairs_;
+//		// key is feature descriptor, value is index of surfel pairs list in all_surfel_pairs
+//		std::vector< SurfelPairHashmap > surfel_pair_list_map_;
+//
+//		// list of surfel pairs for reference surfel
+//		std::vector< std::vector< SurfelPairVector > > all_surfel_pairs_;
 
 		// list of reference surfels by depth
 		std::vector< std::vector< Surfel* > > reference_surfels_;

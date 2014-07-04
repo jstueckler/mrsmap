@@ -154,19 +154,6 @@ namespace mrsmap {
 		inline void unevaluate();
 
 
-//		inline void unevaluate() {
-//
-//			if( num_points_ > 0.0 ) {
-//
-//				mean_ *= num_points_;
-//				cov_ *= (num_points_-1.0);
-//
-//				unevaluated_ = true;
-//
-//			}
-//
-//		}
-
 		// transforms from local surfel frame to map frame
 		inline void updateReferencePose() {
 			Eigen::Vector3d pos = mean_.block<3,1>(0,0);

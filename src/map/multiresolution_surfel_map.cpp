@@ -227,11 +227,11 @@ void MultiResolutionSurfelMap::extents( Eigen::Matrix< double, 3, 1 >& mean, Eig
 
 }
 
-void MultiResolutionSurfelMap::addPoints( const boost::shared_ptr< const pcl::PointCloud< pcl::PointXYZRGB > >& cloud, const boost::shared_ptr< const std::vector< int > >& indices ) {
-	addPoints( *cloud, *indices );
+void MultiResolutionSurfelMap::addPoints( const boost::shared_ptr< const pcl::PointCloud< pcl::PointXYZRGB > >& cloud, const boost::shared_ptr< const std::vector< int > >& indices, bool smoothViewDir ) {
+	addPoints( *cloud, *indices, smoothViewDir );
 }
 
-void MultiResolutionSurfelMap::addPoints( const pcl::PointCloud< pcl::PointXYZRGB >& cloud, const std::vector< int >& indices ) {
+void MultiResolutionSurfelMap::addPoints( const pcl::PointCloud< pcl::PointXYZRGB >& cloud, const std::vector< int >& indices, bool smoothViewDir ) {
 
 	Eigen::Vector3d sensorOrigin;
 	for ( int i = 0; i < 3; i++ )
@@ -301,13 +301,21 @@ void MultiResolutionSurfelMap::addPoints( const pcl::PointCloud< pcl::PointXYZRG
 
 		NodeValue value;
 
-		// add surfel to view directions within an angular interval
-		for( unsigned int k = 0; k < NodeValue::num_surfels_; k++ ) {
-			const double dist = viewDirection.dot( value.surfels_[k].initial_view_dir_ );
-			if( dist > max_dist ) {
-				value.surfels_[k] += surfel;
+		if( !smoothViewDir ) {
+			Surfel* surfel = value.getSurfel( viewDirection );
+			surfel->add( pos );
+		}
+		else {
+			// add surfel to view directions within an angular interval
+			for( unsigned int k = 0; k < NodeValue::num_surfels_; k++ ) {
+				const double dist = viewDirection.dot( value.surfels_[k].initial_view_dir_ );
+				if( dist > max_dist ) {
+					value.surfels_[k] += surfel;
+				}
 			}
 		}
+
+
 
 
 		// max resolution depends on depth: the farer, the bigger the minimumVolumeSize
@@ -2504,6 +2512,9 @@ void MultiResolutionSurfelMap::visualize3DColorDistribution( pcl::PointCloud< pc
 	info.random = random;
 
 	octree_->root_->sweepDown( &info, &visualize3DColorDistributionFunction );
+
+	cloudPtr->width = cloudPtr->points.size();
+	cloudPtr->height = 1;
 
 }
 

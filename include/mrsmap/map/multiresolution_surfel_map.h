@@ -196,9 +196,9 @@ namespace mrsmap {
 		};
 
 
-		void addPoints( const boost::shared_ptr< const pcl::PointCloud<pcl::PointXYZRGB> >& cloud, const boost::shared_ptr< const std::vector< int > >& indices );
+		void addPoints( const boost::shared_ptr< const pcl::PointCloud<pcl::PointXYZRGB> >& cloud, const boost::shared_ptr< const std::vector< int > >& indices, bool smoothViewDir = false );
 
-		void addPoints( const pcl::PointCloud<pcl::PointXYZRGB>& cloud, const std::vector< int >& indices );
+		void addPoints( const pcl::PointCloud<pcl::PointXYZRGB>& cloud, const std::vector< int >& indices, bool smoothViewDir = false );
 
 		void addImage( const pcl::PointCloud<pcl::PointXYZRGB>& cloud, bool smoothViewDir = true, bool buildNodeImage = false );
 

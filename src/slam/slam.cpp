@@ -39,8 +39,6 @@
 
 #include <pcl/registration/transforms.h>
 
-#include <mrsmap/registration/multiresolution_surfel_registration.h>
-
 
 #include <pcl/segmentation/extract_polygonal_prism_data.h>
 #include <pcl/surface/convex_hull.h>
@@ -59,7 +57,14 @@ using namespace mrsmap;
 
 #define REGISTER_TWICE 0
 
+#define SOFT_REGISTRATION 0
 
+
+#if SOFT_REGISTRATION
+#include <mrsmap/registration/multiresolution_soft_surfel_registration.h>
+#else
+#include <mrsmap/registration/multiresolution_surfel_registration.h>
+#endif
 
 SLAM::Params::Params() {
 	usePointFeatures_ = false;
@@ -209,30 +214,53 @@ bool SLAM::addEdge( unsigned int v1_id, unsigned int v2_id, const Eigen::Matrix4
 
 	pcl::PointCloud< pcl::PointXYZRGB >::Ptr corrSrc;
 	pcl::PointCloud< pcl::PointXYZRGB >::Ptr corrTgt;
+
+#if SOFT_REGISTRATION
+
+	MultiResolutionSoftSurfelRegistration reg;
+	bool retVal = reg.estimateTransformation( *(keyFrameNodeMap_[v1_id]->map_), *(keyFrameNodeMap_[v2_id]->map_), transform, register_start_resolution, register_stop_resolution, corrSrc, corrTgt, GRADIENT_ITS );
+
+	if( REGISTER_TWICE )
+		retVal = reg.estimateTransformation( *(keyFrameNodeMap_[v1_id]->map_), *(keyFrameNodeMap_[v2_id]->map_), transform, register_start_resolution, register_stop_resolution, corrSrc, corrTgt, GRADIENT_ITS );
+	if( !retVal )
+		return false;
+
+
+	if( checkMatchingLikelihood ) {
+
+		std::cout << "warning: slam checkMatchingLikelihood not implemented for soft reg" << std::endl;
+
+	}
+
+
+	retVal = reg.estimatePoseCovarianceLM( poseCov, *(keyFrameNodeMap_[v1_id]->map_), *(keyFrameNodeMap_[v2_id]->map_), transform, register_start_resolution, register_stop_resolution );
+
+
+	if( !retVal )
+		return false;
+
+#else
+
 	MultiResolutionSurfelRegistration reg;
 	reg.params_.registerFeatures_ = params_.usePointFeatures_;
 	reg.params_.debugFeatures_ = params_.debugPointFeatures_;
-//	reg.params_.max_processing_time_ = 90.0;
-//	reg.params_.pointFeatureMatchingCoarseImagePosMahalDist_ = 2.0*reg.params_.pointFeatureMatchingFineImagePosMahalDist_;
 	bool retVal = reg.estimateTransformation( *(keyFrameNodeMap_[v1_id]->map_), *(keyFrameNodeMap_[v2_id]->map_), transform, register_start_resolution, register_stop_resolution, corrSrc, corrTgt, GRADIENT_ITS, NEWTON_FEAT_ITS, NEWTON_ITS );
-
-//	reg.params_.registerFeatures_ = params_.usePointFeatures_;
-//	reg.params_.debugFeatures_ = params_.debugPointFeatures_;
-//	retVal = reg.estimateTransformation( *(keyFrameNodeMap_[v1_id]->map_), *(keyFrameNodeMap_[v2_id]->map_), transform, register_start_resolution, register_stop_resolution, corrSrc, corrTgt, GRADIENT_ITS, NEWTON_FEAT_ITS, NEWTON_ITS );
 
 	if( REGISTER_TWICE )
 		retVal = reg.estimateTransformation( *(keyFrameNodeMap_[v1_id]->map_), *(keyFrameNodeMap_[v2_id]->map_), transform, register_start_resolution, register_stop_resolution, corrSrc, corrTgt, GRADIENT_ITS, NEWTON_FEAT_ITS, NEWTON_ITS );
 	if( !retVal )
 		return false;
 
-	Eigen::Matrix4d transforminv = transform.inverse();
-	double logLikelihood1 = reg.matchLogLikelihood( *(keyFrameNodeMap_[v1_id]->map_), *(keyFrameNodeMap_[v2_id]->map_), transform );
-	std::cout << "new edge likelihood1: " << logLikelihood1 << "\n";
-
-	double logLikelihood2 = reg.matchLogLikelihood( *(keyFrameNodeMap_[v2_id]->map_), *(keyFrameNodeMap_[v1_id]->map_), transforminv );
-	std::cout << "new edge likelihood2: " << logLikelihood2 << "\n";
 
 	if( checkMatchingLikelihood ) {
+
+		Eigen::Matrix4d transforminv = transform.inverse();
+		double logLikelihood1 = reg.matchLogLikelihood( *(keyFrameNodeMap_[v1_id]->map_), *(keyFrameNodeMap_[v2_id]->map_), transform );
+		std::cout << "new edge likelihood1: " << logLikelihood1 << "\n";
+
+		double logLikelihood2 = reg.matchLogLikelihood( *(keyFrameNodeMap_[v2_id]->map_), *(keyFrameNodeMap_[v1_id]->map_), transforminv );
+		std::cout << "new edge likelihood2: " << logLikelihood2 << "\n";
+
 		double baseLogLikelihood1 = keyFrameNodeMap_[v1_id]->sumLogLikelihood_ / keyFrameNodeMap_[v1_id]->numEdges_;
 		double baseLogLikelihood2 = keyFrameNodeMap_[v2_id]->sumLogLikelihood_ / keyFrameNodeMap_[v2_id]->numEdges_;
 		std::cout << "key frame1 base log likelihood is " << baseLogLikelihood1 << "\n";
@@ -251,6 +279,8 @@ bool SLAM::addEdge( unsigned int v1_id, unsigned int v2_id, const Eigen::Matrix4
 
 	if( !retVal )
 		return false;
+
+#endif
 
 	// add edge to graph
 	return addEdge( v1_id, v2_id, transform, poseCov );
@@ -390,6 +420,26 @@ bool SLAM::addImage( const cv::Mat& img_rgb, const pcl::PointCloud<pcl::PointXYZ
 	}
 	else {
 
+#if SOFT_REGISTRATION
+
+		pcl::PointCloud< pcl::PointXYZRGB >::Ptr corrSrc;
+		pcl::PointCloud< pcl::PointXYZRGB >::Ptr corrTgt;
+		MultiResolutionSoftSurfelRegistration reg;
+
+		if( params_.regularizePose_ ) {
+			Eigen::Matrix< double, 6, 1 > pose_mean, pose_var;
+			pose_mean.block<3,1>(0,0) = incTransform.block<3,1>(0,3);
+			pose_mean.block<3,1>(3,0) = Eigen::Quaterniond( incTransform.block<3,3>(0,0) ).coeffs().block<3,1>(0,0);
+			pose_var = 1.0*Eigen::Matrix< double, 6, 1 >::Ones();
+			reg.setPriorPose( true, pose_mean, pose_var );
+		}
+
+		bool retVal = reg.estimateTransformation( *(keyFrames_[referenceKeyFrameId_]->map_), *target, incTransform, register_start_resolution, register_stop_resolution, corrSrc, corrTgt, GRADIENT_ITS );
+		if( REGISTER_TWICE )
+			retVal = reg.estimateTransformation( *(keyFrames_[referenceKeyFrameId_]->map_), *target, incTransform, register_start_resolution, register_stop_resolution, corrSrc, corrTgt, GRADIENT_ITS );
+
+
+#else
 
 		pcl::PointCloud< pcl::PointXYZRGB >::Ptr corrSrc;
 		pcl::PointCloud< pcl::PointXYZRGB >::Ptr corrTgt;
@@ -409,6 +459,8 @@ bool SLAM::addImage( const cv::Mat& img_rgb, const pcl::PointCloud<pcl::PointXYZ
 		bool retVal = reg.estimateTransformation( *(keyFrames_[referenceKeyFrameId_]->map_), *target, incTransform, register_start_resolution, register_stop_resolution, corrSrc, corrTgt, GRADIENT_ITS, NEWTON_FEAT_ITS, NEWTON_ITS );
 		if( REGISTER_TWICE )
 			retVal = reg.estimateTransformation( *(keyFrames_[referenceKeyFrameId_]->map_), *target, incTransform, register_start_resolution, register_stop_resolution, corrSrc, corrTgt, GRADIENT_ITS, NEWTON_FEAT_ITS, NEWTON_ITS );
+
+#endif
 
 		if( !retVal ) {
 			std::cout << "SLAM: lost track in current frame\n";
@@ -455,24 +507,40 @@ bool SLAM::addImage( const cv::Mat& img_rgb, const pcl::PointCloud<pcl::PointXYZ
 
 		if( !keyFrames_.empty() ) {
 
+#if SOFT_REGISTRATION
+
+			pcl::PointCloud< pcl::PointXYZRGB >::Ptr corrSrc;
+			pcl::PointCloud< pcl::PointXYZRGB >::Ptr corrTgt;
+			MultiResolutionSoftSurfelRegistration reg;
+			reg.estimatePoseCovarianceLM( poseCov, *(keyFrames_[referenceKeyFrameId_]->map_), *(keyFrame->map_), lastTransform_, register_start_resolution, register_stop_resolution );
+
+#else
+
 			pcl::PointCloud< pcl::PointXYZRGB >::Ptr corrSrc;
 			pcl::PointCloud< pcl::PointXYZRGB >::Ptr corrTgt;
 			MultiResolutionSurfelRegistration reg;
 			reg.estimatePoseCovariance( poseCov, *(keyFrames_[referenceKeyFrameId_]->map_), *(keyFrame->map_), lastTransform_, register_start_resolution, register_stop_resolution );
 
-//			Eigen::Matrix4d Tinv = lastTransform_.inverse();
-//			double logLikelihood1 = reg.matchLogLikelihood( *(keyFrames_[referenceKeyFrameId_]->map_), *(keyFrame->map_), Tinv );
-//			double logLikelihood2 = reg.matchLogLikelihood( *(keyFrame->map_), *(keyFrames_[referenceKeyFrameId_]->map_), lastTransform_ );
-//			std::cout << "new key frame first edge log likelihood: " << logLikelihood2 << "\n";
+#endif
+
 
 		}
 		else
 			poseCov.setZero();
 
+
+#if SOFT_REGISTRATION
+
+		std::cout << "warning loglikelihood check not implemented for soft reg" << std::endl;
+
+#else
+
 		MultiResolutionSurfelRegistration reg;
 		double logLikelihood2 = reg.selfMatchLogLikelihood( *(keyFrame->map_) );
 		keyFrame->sumLogLikelihood_ += logLikelihood2;
 		keyFrame->numEdges_ += 1.0;
+
+#endif
 
 		// extend slam graph with vertex for new key frame and with one edge towards the last keyframe..
 		unsigned int keyFrameId = addKeyFrame( referenceKeyFrameId_, keyFrame, lastTransform_ );
@@ -495,10 +563,21 @@ bool SLAM::addImage( const cv::Mat& img_rgb, const pcl::PointCloud<pcl::PointXYZ
 
 		if( !keyFrames_.empty() ) {
 
+#if SOFT_REGISTRATION
+
+			pcl::PointCloud< pcl::PointXYZRGB >::Ptr corrSrc;
+			pcl::PointCloud< pcl::PointXYZRGB >::Ptr corrTgt;
+			MultiResolutionSoftSurfelRegistration reg;
+			reg.estimatePoseCovarianceLM( poseCov, *(keyFrames_[referenceKeyFrameId_]->map_), *(target), lastTransform_, register_start_resolution, register_stop_resolution );
+
+#else
+
 			pcl::PointCloud< pcl::PointXYZRGB >::Ptr corrSrc;
 			pcl::PointCloud< pcl::PointXYZRGB >::Ptr corrTgt;
 			MultiResolutionSurfelRegistration reg;
 			reg.estimatePoseCovariance( poseCov, *(keyFrames_[referenceKeyFrameId_]->map_), *(target), lastTransform_, register_start_resolution, register_stop_resolution );
+
+#endif
 
 		}
 		else
@@ -515,6 +594,32 @@ bool SLAM::addImage( const cv::Mat& img_rgb, const pcl::PointCloud<pcl::PointXYZ
 
 		// register current frame to last frame - and add edge
 		Eigen::Matrix4d seqTransform = Eigen::Matrix4d::Identity();
+
+#if SOFT_REGISTRATION
+
+		pcl::PointCloud< pcl::PointXYZRGB >::Ptr corrSrc;
+		pcl::PointCloud< pcl::PointXYZRGB >::Ptr corrTgt;
+		MultiResolutionSoftSurfelRegistration reg;
+
+		bool retVal2 = reg.estimateTransformation( *lastFrameMap_, *target, seqTransform, register_start_resolution, register_stop_resolution, corrSrc, corrTgt, GRADIENT_ITS );
+		if( REGISTER_TWICE )
+			retVal2 = reg.estimateTransformation( *lastFrameMap_, *target, seqTransform, register_start_resolution, register_stop_resolution, corrSrc, corrTgt, GRADIENT_ITS );
+
+		if( !retVal2 ) {
+			std::cout << "SLAM: could not connect sequential frames\n";
+		}
+		else {
+
+			reg.estimatePoseCovarianceLM( poseCov, *lastFrameMap_, *target, seqTransform, register_start_resolution, register_stop_resolution );
+
+			unsigned int v1_id = intermediateFrame->nodeId_-1;
+			unsigned int v2_id = intermediateFrame->nodeId_;
+
+			addEdge( v1_id, v2_id, seqTransform, poseCov );
+
+		}
+
+#else
 
 		pcl::PointCloud< pcl::PointXYZRGB >::Ptr corrSrc;
 		pcl::PointCloud< pcl::PointXYZRGB >::Ptr corrTgt;
@@ -537,6 +642,8 @@ bool SLAM::addImage( const cv::Mat& img_rgb, const pcl::PointCloud<pcl::PointXYZ
 			addEdge( v1_id, v2_id, seqTransform, poseCov );
 
 		}
+
+#endif
 
 	}
 
@@ -811,6 +918,22 @@ bool SLAM::refineEdge( g2o::EdgeSE3* edge, float register_start_resolution, floa
 	}
 
 
+#if SOFT_REGISTRATION
+
+	pcl::PointCloud< pcl::PointXYZRGB >::Ptr corrSrc;
+	pcl::PointCloud< pcl::PointXYZRGB >::Ptr corrTgt;
+	MultiResolutionSoftSurfelRegistration reg;
+	bool retVal = reg.estimateTransformation( *(keyFrameNodeMap_[v1_id]->map_), *(keyFrameNodeMap_[v2_id]->map_), diffTransform, register_start_resolution, register_stop_resolution, corrSrc, corrTgt, GRADIENT_ITS );
+	if( REGISTER_TWICE )
+		retVal = reg.estimateTransformation( *(keyFrameNodeMap_[v1_id]->map_), *(keyFrameNodeMap_[v2_id]->map_), diffTransform, register_start_resolution, register_stop_resolution, corrSrc, corrTgt, GRADIENT_ITS );
+	if( !retVal )
+		return false;
+
+	retVal &= reg.estimatePoseCovarianceLM( poseCov, *(keyFrameNodeMap_[v1_id]->map_), *(keyFrameNodeMap_[v2_id]->map_), diffTransform, register_start_resolution, register_stop_resolution );
+
+
+#else
+
 	pcl::PointCloud< pcl::PointXYZRGB >::Ptr corrSrc;
 	pcl::PointCloud< pcl::PointXYZRGB >::Ptr corrTgt;
 	MultiResolutionSurfelRegistration reg;
@@ -824,6 +947,7 @@ bool SLAM::refineEdge( g2o::EdgeSE3* edge, float register_start_resolution, floa
 
 	retVal &= reg.estimatePoseCovariance( poseCov, *(keyFrameNodeMap_[v1_id]->map_), *(keyFrameNodeMap_[v2_id]->map_), diffTransform, register_start_resolution, register_stop_resolution );
 
+#endif
 
 
 	if( retVal ) {
@@ -1111,20 +1235,20 @@ boost::shared_ptr< MultiResolutionSurfelMap > SLAM::getMap( const Eigen::Matrix4
 
 
 		// add keyframe to map
+		graphmap->setApplyUpdate(true);
 		std::vector< int > imageBorderIndices;
 		graphmap->findVirtualBorderPoints( *(keyFrameNodeMap_[v_id]->cloud_), imageBorderIndices );
 		graphmap->markNoUpdateAtPoints( transformedCloud, imageBorderIndices );
+		graphmap->findForegroundBorderPoints( *(keyFrameNodeMap_[v_id]->cloud_), imageBorderIndices );
+		graphmap->markNoUpdateAtPoints( transformedCloud, imageBorderIndices );
 		graphmap->params_.dist_dependency = params_.map_dist_dependency_;
 		graphmap->addImage( transformedCloud );
-		graphmap->octree_->root_->establishNeighbors();
-		graphmap->evaluateSurfels();
-		graphmap->buildShapeTextureFeatures();
-
-
-
-
 
 	}
+
+	graphmap->octree_->root_->establishNeighbors();
+	graphmap->evaluateSurfels();
+	graphmap->buildShapeTextureFeatures();
 
 	return graphmap;
 

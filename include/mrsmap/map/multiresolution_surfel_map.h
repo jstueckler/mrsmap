@@ -109,7 +109,7 @@ namespace mrsmap {
 	{
 	public:
 
-		typedef GNodeValue< GSurfel< 1 >, 1 > NodeValue;
+		typedef GNodeValue< GSurfel< 1 >, 6 > NodeValue;
 		typedef GSurfel< 1 > Surfel;
 
 		class Params {

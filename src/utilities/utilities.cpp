@@ -588,7 +588,7 @@ void mrsmap::reprojectPointCloudToImages( const pcl::PointCloud< pcl::PointXYZRG
 				int ix = round(nx);
 				int iy = round(ny);
 
-				if( p.z > 0.2f && ix >= 0 && ix < cloud->width && iy >= 0 && iy < cloud->height ) {
+				if( p.z > 0.2f && ix >= 0 && ix < img_rgb.cols && iy >= 0 && iy < img_rgb.rows ) {
 					img_depth.at< unsigned short >( iy, ix ) = p.z * 5000.f;
 					img_rgb.at< cv::Vec3b >( iy, ix ) = px;
 				}
@@ -602,6 +602,44 @@ void mrsmap::reprojectPointCloudToImages( const pcl::PointCloud< pcl::PointXYZRG
 
 //	cv::remap( orig_img_rgb, img_rgb, mapX, mapY, CV_INTER_LINEAR );
 //	cv::remap( orig_img_depth, img_depth, mapX, mapY, CV_INTER_NN );
+
+}
+
+
+void mrsmap::reprojectPointCloudToImagesF( const pcl::PointCloud< pcl::PointXYZRGB >::ConstPtr& cloud, cv::Mat& img_rgb, cv::Mat& img_depth ) {
+
+	int idx = 0;
+	for( unsigned int y = 0; y < cloud->height; y++ ) {
+		for( unsigned int x = 0; x < cloud->width; x++ ) {
+
+			const pcl::PointXYZRGB& p = cloud->points[idx];
+
+			cv::Vec3b px;
+			px[0] = p.b;
+			px[1] = p.g;
+			px[2] = p.r;
+
+			if( std::isnan( p.x ) ) {
+			}
+			else {
+
+				float nx = p.x / p.z * 525.f + 319.5f;
+				float ny = p.y / p.z * 525.f + 239.5f;
+
+				int ix = round(nx);
+				int iy = round(ny);
+
+				if( p.z > 0.2f && ix >= 0 && ix < img_rgb.cols && iy >= 0 && iy < img_rgb.rows ) {
+					img_depth.at< float >( iy, ix ) = p.z;
+					img_rgb.at< cv::Vec3b >( iy, ix ) = px;
+				}
+			}
+
+
+			idx++;
+
+		}
+	}
 
 }
 

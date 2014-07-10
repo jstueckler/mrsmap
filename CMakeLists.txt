@@ -28,7 +28,7 @@ IF( NOT CATKIN_DEVEL_PREFIX STREQUAL "" )
 
   catkin_package(
     INCLUDE_DIRS include
-    LIBRARIES mrsmap
+    LIBRARIES mrsmap mrsslam
     DEPENDS system_lib
   )
 

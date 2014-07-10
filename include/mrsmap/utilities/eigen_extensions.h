@@ -4,6 +4,9 @@
 #include <Eigen/Core>
 #include <Eigen/Eigen>
 
+#include <cmath>
+
+
 namespace Eigen {
     typedef Matrix< float, 6, 1 > Vector6f;
     typedef Matrix< double, 6, 1 > Vector6d;
@@ -54,7 +57,7 @@ inline Eigen::Matrix3d exp_rotation(const Eigen::Vector3d & w)
       static const double one_20th = 1.0/20.0;
 
       const double theta_sq = w.squaredNorm(); //w*w;
-      const double theta = sqrt(theta_sq);
+      const double theta = std::sqrt(theta_sq);
       double A, B;
       //Use a Taylor series expansion near zero. This is required for
       //accuracy, since sin t / t and (1-cos t)/t^2 are both 0/0.
@@ -67,8 +70,8 @@ inline Eigen::Matrix3d exp_rotation(const Eigen::Vector3d & w)
                       A = 1.0 - theta_sq * one_6th*(1.0 - one_20th * theta_sq);
               } else {
                       const double inv_theta = 1.0/theta;
-                      A = sin(theta) * inv_theta;
-                      B = (1 - cos(theta)) * (inv_theta * inv_theta);
+                      A = std::sin(theta) * inv_theta;
+                      B = (1 - std::cos(theta)) * (inv_theta * inv_theta);
               }
       }
 
@@ -87,22 +90,22 @@ inline Eigen::Vector3d ln_rotation( Eigen::Matrix3d & rotation ) {
     result(1) = (rotation(0,2)-rotation(2,0))*0.5;
     result(2) = (rotation(1,0)-rotation(0,1))*0.5;
 
-    double sin_angle_abs = result.norm(); //sqrt(result*result);
+    double sin_angle_abs = result.norm(); //std::sqrt(result*result);
     if (cos_angle > M_SQRT1_2)
     {            // (0 - Pi/4( use asin
         if(sin_angle_abs > 0){
-            result *= asin(sin_angle_abs) / sin_angle_abs;
+            result *= std::asin(sin_angle_abs) / sin_angle_abs;
         }
     }
     else if( cos_angle > -M_SQRT1_2)
     {    // (Pi/4 - 3Pi/4( use acos, but antisymmetric part
-        double angle = acos(cos_angle);
+        double angle = std::acos(cos_angle);
         result *= angle / sin_angle_abs;
     }
     else
     {  // rest use symmetric part
         // antisymmetric part vanishes, but still large rotation, need information from symmetric part
-        const double angle = M_PI - asin(sin_angle_abs);
+        const double angle = M_PI - std::asin(sin_angle_abs);
         const double
                 d0 = rotation(0,0) - cos_angle,
                 d1 = rotation(1,1) - cos_angle,
@@ -142,11 +145,11 @@ inline Vector6d ln_affine( const Eigen::Matrix4d & m )
     Matrix3d r = m.block<3,3>(0,0);
 
     Vector3d rot = ln_rotation( r );
-    const double theta =  rot.norm(); //sqrt(rot*rot);
+    const double theta =  rot.norm(); //std::sqrt(rot*rot);
 
     double shtot = 0.5;
     if(theta > 0.00001)
-        shtot = sin(theta*0.5)/theta;
+        shtot = std::sin(theta*0.5)/theta;
 
     // now do the rotation
     Vector3d rot_half = rot;
@@ -219,8 +222,8 @@ inline Matrix4d exp_affine(const Vector6d & mu)
                 else
                 {
                         const double inv_theta = 1.0/theta;
-                        A = sin(theta) * inv_theta;
-                        B = (1 - cos(theta)) * (inv_theta * inv_theta);
+                        A = std::sin(theta) * inv_theta;
+                        B = (1 - std::cos(theta)) * (inv_theta * inv_theta);
                         C = (1 - A) * (inv_theta * inv_theta);
                 }
 
@@ -314,8 +317,8 @@ inline int EM_To_Q(Eigen::Vector3d& v, Eigen::Quaterniond & q, int reparam)
     else
         theta = v.norm();
 
-    cosp = cos(.5*theta);
-    sinp = sin(.5*theta);
+    cosp = std::cos(.5*theta);
+    sinp = std::sin(.5*theta);
 
     q.w() = cosp;
     Eigen::Vector3d qv;
@@ -341,7 +344,8 @@ inline int EM_To_Q(Eigen::Vector3d& v, Eigen::Quaterniond & q, int reparam)
 inline void Partial_Q_Partial_3V(const Eigen::Vector3d & v, int i, Eigen::Vector4d& dq_dvi)
 {
     double   theta = v.norm();
-    double   cosp = cos(.5*theta), sinp = sin(.5*theta);
+    double   cosp = std::cos(.5*theta);
+    double   sinp = std::sin(.5*theta);
 
     assert(i>=0 && i<3);
 

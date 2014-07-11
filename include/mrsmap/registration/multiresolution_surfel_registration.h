@@ -357,7 +357,7 @@ namespace mrsmap {
 //		SurfelAssociationList surfelAssociations_;
 		FeatureAssociationList featureAssociations_;
 		algorithm::OcTreeSamplingVectorMap< float, MultiResolutionSurfelMap::NodeValue > targetSamplingMap_;
-		float lastWSign_;
+//		float lastWSign_;
 		bool interpolate_neighbors_;
 
 		pcl::PointCloud< pcl::PointXYZRGB >::Ptr correspondences_source_points_;
@@ -394,12 +394,12 @@ namespace mrsmap {
 
 	protected:
 
-		bool registrationErrorFunctionWithFirstDerivative( const Eigen::Matrix< double, 6, 1 >& x, double& f, Eigen::Matrix< double, 6, 1 >& df_dx, MultiResolutionSurfelRegistration::SurfelAssociationList& surfelAssociations );
-		bool registrationErrorFunctionWithFirstAndSecondDerivative( const Eigen::Matrix< double, 6, 1 >& x, bool relativeDerivative, double& f, Eigen::Matrix< double, 6, 1 >& df_dx, Eigen::Matrix< double, 6, 6 >& d2f_dx2, MultiResolutionSurfelRegistration::SurfelAssociationList& surfelAssociations );
+		bool registrationErrorFunctionWithFirstDerivative( const Eigen::Matrix< double, 6, 1 >& x, double qwSign, double& f, Eigen::Matrix< double, 6, 1 >& df_dx, MultiResolutionSurfelRegistration::SurfelAssociationList& surfelAssociations );
+		bool registrationErrorFunctionWithFirstAndSecondDerivative( const Eigen::Matrix< double, 6, 1 >& x, double qwSign, bool relativeDerivative, double& f, Eigen::Matrix< double, 6, 1 >& df_dx, Eigen::Matrix< double, 6, 6 >& d2f_dx2, MultiResolutionSurfelRegistration::SurfelAssociationList& surfelAssociations );
 
-		bool registrationErrorFunctionLM( const Eigen::Matrix<double, 6, 1>& x, double& f, MultiResolutionSurfelRegistration::SurfelAssociationList& surfelAssociations, MultiResolutionSurfelRegistration::FeatureAssociationList& featureAssociations, double mahaldist );
+		bool registrationErrorFunctionLM( const Eigen::Matrix<double, 6, 1>& x, double qwSign, double& f, MultiResolutionSurfelRegistration::SurfelAssociationList& surfelAssociations, MultiResolutionSurfelRegistration::FeatureAssociationList& featureAssociations, double mahaldist );
 
-		bool registrationSurfelErrorFunctionWithFirstAndSecondDerivativeLM( const Eigen::Matrix< double, 6, 1 >& x, double& f, Eigen::Matrix< double, 6, 1 >& df, Eigen::Matrix< double, 6, 6 >& d2f, MultiResolutionSurfelRegistration::SurfelAssociationList& surfelAssociations );
+		bool registrationSurfelErrorFunctionWithFirstAndSecondDerivativeLM( const Eigen::Matrix< double, 6, 1 >& x, double qwSign, double& f, Eigen::Matrix< double, 6, 1 >& df, Eigen::Matrix< double, 6, 6 >& d2f, MultiResolutionSurfelRegistration::SurfelAssociationList& surfelAssociations );
 
 
 	public:

@@ -3081,7 +3081,7 @@ double MultiResolutionSurfelRegistration::preparePointFeatureDerivatives( const 
 }
 
 
-bool MultiResolutionSurfelRegistration::registrationErrorFunctionWithFirstDerivative( const Eigen::Matrix< double, 6, 1 >& x, double& f, Eigen::Matrix< double, 6, 1 >& df_dx, MultiResolutionSurfelRegistration::SurfelAssociationList& surfelAssociations ) {
+bool MultiResolutionSurfelRegistration::registrationErrorFunctionWithFirstDerivative( const Eigen::Matrix< double, 6, 1 >& x, double qwSign, double& f, Eigen::Matrix< double, 6, 1 >& df_dx, MultiResolutionSurfelRegistration::SurfelAssociationList& surfelAssociations ) {
 
 	double sumError = 0.0;
 	double sumWeight = 0.0;
@@ -3096,7 +3096,7 @@ bool MultiResolutionSurfelRegistration::registrationErrorFunctionWithFirstDeriva
 	const double qz = x( 5 );
 	if( qx*qx+qy*qy+qz*qz > 1.0 )
 		std::cout << "quaternion not stable!!\n";
-	const double qw = lastWSign_ * sqrtf(1.0-qx*qx-qy*qy-qz*qz); // retrieve sign from last qw
+	const double qw = qwSign * sqrtf(1.0-qx*qx-qy*qy-qz*qz); // retrieve sign from last qw
 
 	GradientFunctor gf( &surfelAssociations, params_, tx, ty, tz, qx, qy, qz, qw, false, false, interpolate_neighbors_ );
 
@@ -3150,7 +3150,7 @@ bool MultiResolutionSurfelRegistration::registrationErrorFunctionWithFirstDeriva
 
 
 
-bool MultiResolutionSurfelRegistration::registrationErrorFunctionWithFirstAndSecondDerivative( const Eigen::Matrix< double, 6, 1 >& x, bool relativeDerivative, double& f, Eigen::Matrix< double, 6, 1 >& df_dx, Eigen::Matrix< double, 6, 6 >& d2f_dx2, MultiResolutionSurfelRegistration::SurfelAssociationList& surfelAssociations ) {
+bool MultiResolutionSurfelRegistration::registrationErrorFunctionWithFirstAndSecondDerivative( const Eigen::Matrix< double, 6, 1 >& x, double qwSign, bool relativeDerivative, double& f, Eigen::Matrix< double, 6, 1 >& df_dx, Eigen::Matrix< double, 6, 6 >& d2f_dx2, MultiResolutionSurfelRegistration::SurfelAssociationList& surfelAssociations ) {
 
 	double sumError = 0.0;
 	double sumWeight = 0.0;
@@ -3167,7 +3167,7 @@ bool MultiResolutionSurfelRegistration::registrationErrorFunctionWithFirstAndSec
 	const double qz = x( 5 );
 	if( qx*qx+qy*qy+qz*qz > 1.0 )
 		std::cout << "quaternion not stable!!\n";
-	const double qw = lastWSign_ * sqrtf(1.0-qx*qx-qy*qy-qz*qz); // retrieve sign from last qw
+	const double qw = qwSign * sqrtf(1.0-qx*qx-qy*qy-qz*qz); // retrieve sign from last qw
 
 	GradientFunctor gf( &surfelAssociations, params_, tx, ty, tz, qx, qy, qz, qw, relativeDerivative, true, interpolate_neighbors_ );
 
@@ -3280,7 +3280,7 @@ bool MultiResolutionSurfelRegistration::registrationErrorFunctionWithFirstAndSec
 
 
 
-bool MultiResolutionSurfelRegistration::registrationErrorFunctionLM( const Eigen::Matrix< double, 6, 1 >& x, double& f, MultiResolutionSurfelRegistration::SurfelAssociationList& surfelAssociations, MultiResolutionSurfelRegistration::FeatureAssociationList& featureAssociations, double mahaldist ) {
+bool MultiResolutionSurfelRegistration::registrationErrorFunctionLM( const Eigen::Matrix< double, 6, 1 >& x, double qwSign, double& f, MultiResolutionSurfelRegistration::SurfelAssociationList& surfelAssociations, MultiResolutionSurfelRegistration::FeatureAssociationList& featureAssociations, double mahaldist ) {
 
 	double sumFeatureError	= 0.0;
 	double sumFeatureWeight = 0.0;
@@ -3295,7 +3295,7 @@ bool MultiResolutionSurfelRegistration::registrationErrorFunctionLM( const Eigen
 	const double qz = x( 5 );
 	if( qx*qx+qy*qy+qz*qz > 1.0 )
 		std::cout << "quaternion not stable!!\n";
-	const double qw = lastWSign_ * sqrtf(1.0-qx*qx-qy*qy-qz*qz); // retrieve sign from last qw
+	const double qw = qwSign * sqrtf(1.0-qx*qx-qy*qy-qz*qz); // retrieve sign from last qw
 
 	bool retVal = false;
 
@@ -3450,7 +3450,7 @@ bool MultiResolutionSurfelRegistration::registrationErrorFunctionLM( const Eigen
 
 
 
-bool MultiResolutionSurfelRegistration::registrationSurfelErrorFunctionWithFirstAndSecondDerivativeLM( const Eigen::Matrix< double, 6, 1 >& x, double& f, Eigen::Matrix< double, 6, 1 >& df, Eigen::Matrix< double, 6, 6 >& d2f, MultiResolutionSurfelRegistration::SurfelAssociationList& surfelAssociations ) {
+bool MultiResolutionSurfelRegistration::registrationSurfelErrorFunctionWithFirstAndSecondDerivativeLM( const Eigen::Matrix< double, 6, 1 >& x, double qwSign, double& f, Eigen::Matrix< double, 6, 1 >& df, Eigen::Matrix< double, 6, 6 >& d2f, MultiResolutionSurfelRegistration::SurfelAssociationList& surfelAssociations ) {
 
 	double sumError = 0.0;
 	double sumWeight = 0.0;
@@ -3466,7 +3466,7 @@ bool MultiResolutionSurfelRegistration::registrationSurfelErrorFunctionWithFirst
 	const double qz = x( 5 );
 	if( qx*qx+qy*qy+qz*qz > 1.0 )
 		std::cout << "quaternion not stable!!\n";
-	const double qw = lastWSign_ * sqrtf(1.0-qx*qx-qy*qy-qz*qz); // retrieve sign from last qw
+	const double qw = qwSign * sqrtf(1.0-qx*qx-qy*qy-qz*qz); // retrieve sign from last qw
 
 	GradientFunctorLM gf( &surfelAssociations, params_, tx, ty, tz, qx, qy, qz, qw, true, false, interpolate_neighbors_ );
 
@@ -3614,7 +3614,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationNewton( Eigen::Mat
 	x(3) = q.x();
 	x(4) = q.y();
 	x(5) = q.z();
-	lastWSign_ = q.w() / fabsf(q.w());
+	double lastWSign_ = q.w() / fabsf(q.w());
 
 
 	last_x = x;
@@ -3683,7 +3683,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationNewton( Eigen::Mat
 		// evaluate function and derivative
 		double f = 0.0;
 		stopwatch.reset();
-		retVal = registrationErrorFunctionWithFirstAndSecondDerivative( x, true, f, df, d2f, surfelAssociations );
+		retVal = registrationErrorFunctionWithFirstAndSecondDerivative( x, lastWSign_, true, f, df, d2f, surfelAssociations );
 
 		if( !retVal ) {
 			df.setZero();
@@ -3746,6 +3746,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationNewton( Eigen::Mat
 			x( 3 ) = q_new.x();
 			x( 4 ) = q_new.y();
 			x( 5 ) = q_new.z();
+			lastWSign_ = q_new.w() / fabsf(q_new.w());
 
 		}
 
@@ -3812,7 +3813,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationLevenbergMarquardt
 	x(3) = q.x();
 	x(4) = q.y();
 	x(5) = q.z();
-	lastWSign_ = q.w() / fabsf(q.w());
+	double lastWSign_ = q.w() / fabsf(q.w());
 
 
 	pcl::StopWatch stopwatch;
@@ -3864,7 +3865,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationLevenbergMarquardt
 			interpolate_neighbors_ = interpolate;
 
 			stopwatch.reset();
-			retVal = registrationSurfelErrorFunctionWithFirstAndSecondDerivativeLM( x, last_error, df, d2f, surfelAssociations );
+			retVal = registrationSurfelErrorFunctionWithFirstAndSecondDerivativeLM( x, lastWSign_, last_error, df, d2f, surfelAssociations );
 			double deltat2 = stopwatch.getTime();
 //			std::cout << "reg deriv took: " << deltat2 << "\n";
 
@@ -3952,6 +3953,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationLevenbergMarquardt
 		x_new( 3 ) = q_new.x();
 		x_new( 4 ) = q_new.y();
 		x_new( 5 ) = q_new.z();
+		double newWSign = q_new.w() / fabsf(q_new.w());
 
 
 //		std::cout << "iter: " << iter << ": " << delta_x.norm() << "\n";
@@ -3960,7 +3962,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationLevenbergMarquardt
 //
 		double new_error = 0.0;
 		featureAssociations_.clear();
-		bool retVal2 = registrationErrorFunctionLM( x_new, new_error, surfelAssociations, featureAssociations_, 0 );
+		bool retVal2 = registrationErrorFunctionLM( x_new, newWSign, new_error, surfelAssociations, featureAssociations_, 0 );
 
 		if( !retVal2 )
 			return false;
@@ -3971,6 +3973,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationLevenbergMarquardt
 		if( rho > 0 ) {
 
 			x = x_new;
+			lastWSign_ = newWSign;
 
 			mu *= std::max( 0.333, 1.0 - pow( 2.0*rho-1.0, 3.0 ) );
 			nu = 2;
@@ -4043,7 +4046,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationGaussNewton( Eigen
 	x(3) = q.x();
 	x(4) = q.y();
 	x(5) = q.z();
-	lastWSign_ = q.w() / fabsf(q.w());
+	double lastWSign_ = q.w() / fabsf(q.w());
 
 
 	pcl::StopWatch stopwatch;
@@ -4093,7 +4096,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationGaussNewton( Eigen
 			interpolate_neighbors_ = interpolate;
 
 			stopwatch.reset();
-			retVal = registrationSurfelErrorFunctionWithFirstAndSecondDerivativeLM( x, last_error, df, d2f, surfelAssociations );
+			retVal = registrationSurfelErrorFunctionWithFirstAndSecondDerivativeLM( x, lastWSign_, last_error, df, d2f, surfelAssociations );
 			double deltat2 = stopwatch.getTime();
 //			std::cout << "reg deriv took: " << deltat2 << "\n";
 
@@ -4167,6 +4170,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationGaussNewton( Eigen
 		x_new( 3 ) = q_new.x();
 		x_new( 4 ) = q_new.y();
 		x_new( 5 ) = q_new.z();
+		double newWSign = q_new.w() / fabsf(q_new.w());
 
 
 //		std::cout << "iter: " << iter << ": " << delta_x.norm() << "\n";
@@ -4175,7 +4179,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationGaussNewton( Eigen
 //
 		double new_error = 0.0;
 		featureAssociations_.clear();
-		bool retVal2 = registrationErrorFunctionLM( x_new, new_error, surfelAssociations, featureAssociations_, 0 );
+		bool retVal2 = registrationErrorFunctionLM( x_new, newWSign, new_error, surfelAssociations, featureAssociations_, 0 );
 
 		if( !retVal2 )
 			return false;
@@ -4186,6 +4190,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationGaussNewton( Eigen
 		}
 
 		x = x_new;
+		lastWSign_ = newWSign;
 
 		reevaluateGradient = true;
 		reassociate = true;
@@ -4255,7 +4260,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationLevenbergMarquardt
 	x(3) = q.x();
 	x(4) = q.y();
 	x(5) = q.z();
-	lastWSign_ = q.w() / fabsf(q.w());
+	double lastWSign_ = q.w() / fabsf(q.w());
 
 	pcl::StopWatch stopwatch;
 
@@ -4421,7 +4426,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationLevenbergMarquardt
 
 				interpolate_neighbors_ = true;
 
-				if (!registrationSurfelErrorFunctionWithFirstAndSecondDerivativeLM( x, surfelError, surfeldf, surfeld2f, surfelAssociations))
+				if (!registrationSurfelErrorFunctionWithFirstAndSecondDerivativeLM( x, lastWSign_, surfelError, surfeldf, surfeld2f, surfelAssociations))
 				{
 					std::cout << "Surfelregistration failed ------\n";
 				}
@@ -4507,6 +4512,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationLevenbergMarquardt
 		x_new( 3 ) = q_new.x();
 		x_new( 4 ) = q_new.y();
 		x_new( 5 ) = q_new.z();
+		double newWSign = q_new.w() / fabsf(q_new.w());
 
 
 //		FeatureAssociationList FALcopy;
@@ -4546,7 +4552,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationLevenbergMarquardt
 		stopwatch.reset();
 
 		new_error = 0.0;
-		bool retVal2 = registrationErrorFunctionLM(x_new, new_error, surfelAssociations, featureAssociations_, featureAssocMahalDist);
+		bool retVal2 = registrationErrorFunctionLM(x_new, newWSign, new_error, surfelAssociations, featureAssociations_, featureAssocMahalDist);
 		if (!retVal2)
 		{
 			std::cout << "2nd ErrorFunction for AreNo and MultiResolutionSurfelMap::Surfel failed\n";
@@ -4561,6 +4567,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationLevenbergMarquardt
 		if (rho > 0) {
 
 			x = x_new;
+			lastWSign_ = newWSign;
 
 //			MRCSRFAL::iterator it2 = FALcopy.begin();
 //			for (MRCSRFAL::iterator it = featureAssociations_.begin(); it != featureAssociations_.end(); ++it) {
@@ -4635,7 +4642,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationGaussNewtonPF( Eig
 	x(3) = q.x();
 	x(4) = q.y();
 	x(5) = q.z();
-	lastWSign_ = q.w() / fabsf(q.w());
+	double lastWSign_ = q.w() / fabsf(q.w());
 
 	pcl::StopWatch stopwatch;
 
@@ -4795,7 +4802,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationGaussNewtonPF( Eig
 
 				interpolate_neighbors_ = true;
 
-				if (!registrationSurfelErrorFunctionWithFirstAndSecondDerivativeLM( x, surfelError, surfeldf, surfeld2f, surfelAssociations))
+				if (!registrationSurfelErrorFunctionWithFirstAndSecondDerivativeLM( x, lastWSign_, surfelError, surfeldf, surfeld2f, surfelAssociations))
 				{
 					std::cout << "Surfelregistration failed ------\n";
 				}
@@ -4867,6 +4874,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationGaussNewtonPF( Eig
 		x_new( 3 ) = q_new.x();
 		x_new( 4 ) = q_new.y();
 		x_new( 5 ) = q_new.z();
+		double newWSign = q_new.w() / fabsf(q_new.w());
 
 
 //		FeatureAssociationList FALcopy;
@@ -4909,6 +4917,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationGaussNewtonPF( Eig
 			std::cout << "feature error function eval took: " << stopwatch.getTime() << "\n";
 
 		x = x_new;
+		lastWSign_ = newWSign;
 
 		qx = x(3);
 		qy = x(4);

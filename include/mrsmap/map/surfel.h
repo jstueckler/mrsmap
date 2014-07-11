@@ -96,6 +96,9 @@ namespace mrsmap {
 
 		inline GSurfel& operator+=(const GSurfel& rhs) {
 
+			if( !applyUpdate_ )
+				return *this;
+
 			if( rhs.num_points_ > 0 && num_points_ < MAX_SURFEL_POINTS ) {
 
 				// numerically stable one-pass update scheme
@@ -120,6 +123,10 @@ namespace mrsmap {
 
 
 		inline void add( const Eigen::Matrix< double, 6, 1 >& point ) {
+
+			if( !applyUpdate_ )
+				return;
+
 			// numerically stable one-pass update scheme
 			if( num_points_ < std::numeric_limits<double>::epsilon() ) {
 				mean_ += point;

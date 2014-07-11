@@ -57,7 +57,7 @@ using namespace mrsmap;
 
 #define REGISTER_TWICE 0
 
-#define SOFT_REGISTRATION 0
+#define SOFT_REGISTRATION 1
 
 
 #if SOFT_REGISTRATION
@@ -1235,17 +1235,23 @@ boost::shared_ptr< MultiResolutionSurfelMap > SLAM::getMap( const Eigen::Matrix4
 
 
 		// add keyframe to map
-		graphmap->setApplyUpdate(true);
-		std::vector< int > imageBorderIndices;
-		graphmap->findVirtualBorderPoints( *(keyFrameNodeMap_[v_id]->cloud_), imageBorderIndices );
-		graphmap->markNoUpdateAtPoints( transformedCloud, imageBorderIndices );
-		graphmap->findForegroundBorderPoints( *(keyFrameNodeMap_[v_id]->cloud_), imageBorderIndices );
-		graphmap->markNoUpdateAtPoints( transformedCloud, imageBorderIndices );
+		graphmap->setApplyUpdate(false);
+		std::vector< int > imageFGBorderIndices, imageBGBorderIndices;
+		graphmap->findVirtualBorderPoints( *(keyFrameNodeMap_[v_id]->cloud_), imageFGBorderIndices );
+		graphmap->markNoUpdateAtPoints( transformedCloud, imageFGBorderIndices );
+		graphmap->findForegroundBorderPoints( *(keyFrameNodeMap_[v_id]->cloud_), imageBGBorderIndices );
+		graphmap->markNoUpdateAtPoints( transformedCloud, imageBGBorderIndices );
 		graphmap->params_.dist_dependency = params_.map_dist_dependency_;
 		graphmap->addImage( transformedCloud );
+		graphmap->clearUpdateSurfelsAtPoints( transformedCloud, imageFGBorderIndices );
+		graphmap->clearUpdateSurfelsAtPoints( transformedCloud, imageBGBorderIndices );
+		graphmap->setUpToDate( true );
+
 
 	}
 
+	graphmap->setApplyUpdate(true);
+	graphmap->setUpToDate( false );
 	graphmap->octree_->root_->establishNeighbors();
 	graphmap->evaluateSurfels();
 	graphmap->buildShapeTextureFeatures();

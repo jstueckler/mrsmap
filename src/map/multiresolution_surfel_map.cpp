@@ -530,7 +530,6 @@ void MultiResolutionSurfelMap::addImage( const pcl::PointCloud< pcl::PointXYZRGB
 
 			if( !smoothViewDir ) {
 				Surfel* surfel = (*mapPtr)->getSurfel( viewDirection );
-//				surfel->add( pos, ppT, 1.0 );
 				surfel->add( pos );
 			}
 			else {
@@ -538,7 +537,6 @@ void MultiResolutionSurfelMap::addImage( const pcl::PointCloud< pcl::PointXYZRGB
 				for( unsigned int k = 0; k < NodeValue::num_surfels_; k++ ) {
 					const double dist = viewDirection.dot( (*mapPtr)->surfels_[k].initial_view_dir_ );
 					if( dist > max_dist ) {
-//						(*mapPtr)->surfels_[k].add( pos, ppT, 1.0 );
 						(*mapPtr)->surfels_[k].add( pos );
 					}
 				}

@@ -100,7 +100,7 @@ set( SRC_MRSMAPLIB
 		src/map/surfelpair.cpp
 		src/map/shapetexture_feature.cpp
 		src/registration/multiresolution_surfel_registration.cpp
-#		src/registration/multiresolution_soft_surfel_registration.cpp
+		src/registration/multiresolution_soft_surfel_registration.cpp
 		src/utilities/utilities.cpp
 		src/visualization/visualization_map.cpp
 )

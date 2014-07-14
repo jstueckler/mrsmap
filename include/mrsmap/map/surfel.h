@@ -51,7 +51,7 @@
 #include <pcl/common/vector_average.h>
 
 
-//#define MIN_SURFEL_POINTS 10.0
+#define MIN_SURFEL_POINTS 10.0
 #define MAX_SURFEL_POINTS 10000.0 //stop at this point count, since the sums may get numerically unstable
 
 
@@ -60,11 +60,6 @@ namespace mrsmap {
 
 	// TODO (Jan): move optional fields to vectors indexed by surfel idx.
 
-
-	template< unsigned int MinPoints > struct GSurfel_evaluator;
-	template< unsigned int MinPoints > struct GSurfel_unevaluator;
-
-	template< unsigned int MinPoints >
 	class GSurfel {
 	public:
 		GSurfel() {
@@ -96,9 +91,6 @@ namespace mrsmap {
 
 		inline GSurfel& operator+=(const GSurfel& rhs) {
 
-			if( !applyUpdate_ )
-				return *this;
-
 			if( rhs.num_points_ > 0 && num_points_ < MAX_SURFEL_POINTS ) {
 
 				// numerically stable one-pass update scheme
@@ -123,10 +115,6 @@ namespace mrsmap {
 
 
 		inline void add( const Eigen::Matrix< double, 6, 1 >& point ) {
-
-			if( !applyUpdate_ )
-				return;
-
 			// numerically stable one-pass update scheme
 			if( num_points_ < std::numeric_limits<double>::epsilon() ) {
 				mean_ += point;
@@ -157,9 +145,72 @@ namespace mrsmap {
 
 		}
 
-		inline void evaluate();
-		inline void unevaluate();
+		inline void evaluate() {
 
+			if( num_points_ >= MIN_SURFEL_POINTS ) {
+
+				const double inv_num = 1.0 / num_points_;
+				mean_ *= inv_num;
+				cov_ /= (num_points_-1.0);
+
+
+				// enforce symmetry..
+				cov_(1,0) = cov_(0,1);
+				cov_(2,0) = cov_(0,2);
+				cov_(3,0) = cov_(0,3);
+				cov_(4,0) = cov_(0,4);
+				cov_(5,0) = cov_(0,5);
+				cov_(2,1) = cov_(1,2);
+				cov_(2,3) = cov_(3,2);
+				cov_(2,4) = cov_(4,2);
+				cov_(2,5) = cov_(5,2);
+				cov_(3,1) = cov_(1,3);
+				cov_(3,4) = cov_(4,3);
+				cov_(3,5) = cov_(5,3);
+				cov_(4,1) = cov_(1,4);
+				cov_(4,5) = cov_(5,4);
+				cov_(5,1) = cov_(1,5);
+
+				double det = cov_.block<3,3>(0,0).determinant();
+
+				if( det <= std::numeric_limits<double>::epsilon() ) {
+
+					// TODO (Jan): make this optional in a special kind of surfel
+					// pull out surfels in a separate header, templated surfel class, derived from a base class
+
+//					cov_(0,0) += 0.000000001;
+//					cov_(1,1) += 0.000000001;
+//					cov_(2,2) += 0.000000001;
+
+					mean_.setZero();
+					cov_.setZero();
+
+					num_points_ = 0;
+
+					clear();
+				}
+
+			}
+
+
+			up_to_date_ = true;
+			unevaluated_ = false;
+
+		}
+
+
+		inline void unevaluate() {
+
+			if( num_points_ > 0.0 ) {
+
+				mean_ *= num_points_;
+				cov_ *= (num_points_-1.0);
+
+				unevaluated_ = true;
+
+			}
+
+		}
 
 		// transforms from local surfel frame to map frame
 		inline void updateReferencePose() {
@@ -200,156 +251,14 @@ namespace mrsmap {
 	  ShapeTextureFeature simple_shape_texture_features_; // TODO (Jan): move to outside vector on idx_
 	  ShapeTextureFeature agglomerated_shape_texture_features_;
 
-	  static constexpr double min_points_ = MinPoints;
-
 	public:
 	  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
 	};
 
 
-	template< unsigned int MinPoints >
-	struct GSurfel_evaluator {
-		void operator()( GSurfel< MinPoints >* self ) {
-
-			if( self->num_points_ >= self->min_points_ ) {
-
-				const double inv_num = 1.0 / self->num_points_;
-				self->mean_ *= inv_num;
-				self->cov_ /= (self->num_points_-1.0);
-
-
-				// enforce symmetry..
-				self->cov_(1,0) = self->cov_(0,1);
-				self->cov_(2,0) = self->cov_(0,2);
-				self->cov_(3,0) = self->cov_(0,3);
-				self->cov_(4,0) = self->cov_(0,4);
-				self->cov_(5,0) = self->cov_(0,5);
-				self->cov_(2,1) = self->cov_(1,2);
-				self->cov_(2,3) = self->cov_(3,2);
-				self->cov_(2,4) = self->cov_(4,2);
-				self->cov_(2,5) = self->cov_(5,2);
-				self->cov_(3,1) = self->cov_(1,3);
-				self->cov_(3,4) = self->cov_(4,3);
-				self->cov_(3,5) = self->cov_(5,3);
-				self->cov_(4,1) = self->cov_(1,4);
-				self->cov_(4,5) = self->cov_(5,4);
-				self->cov_(5,1) = self->cov_(1,5);
-
-				const Eigen::Matrix<double, 6, 6> cov = self->cov_;
-				double det = cov.block<3,3>(0,0).determinant();
-
-				if( det <= std::numeric_limits<double>::epsilon() ) {
-
-					self->mean_.setZero();
-					self->cov_.setZero();
-
-					self->num_points_ = 0;
-
-					self->clear();
-				}
-
-			}
-
-
-			self->up_to_date_ = true;
-			self->unevaluated_ = false;
-
-		}
-
-	};
-
-	template< unsigned int MinPoints >
-	struct GSurfel_unevaluator {
-		void operator()( GSurfel< MinPoints >* self ) {
-			if( self->num_points_ > 0.0 ) {
-
-				self->mean_ *= self->num_points_;
-				self->cov_ *= (self->num_points_-1.0);
-
-				self->unevaluated_ = true;
-
-			}
-		}
-	};
-
-
-	template<>
-	struct GSurfel_evaluator< 1 > {
-		void operator()( GSurfel< 1 >* self ) {
-
-			if( self->num_points_ >= self->min_points_ ) {
-
-				const double inv_num = 1.0 / self->num_points_;
-				self->mean_ *= inv_num;
-				self->cov_ *= inv_num;
-
-
-				// enforce symmetry..
-				self->cov_(1,0) = self->cov_(0,1);
-				self->cov_(2,0) = self->cov_(0,2);
-				self->cov_(3,0) = self->cov_(0,3);
-				self->cov_(4,0) = self->cov_(0,4);
-				self->cov_(5,0) = self->cov_(0,5);
-				self->cov_(2,1) = self->cov_(1,2);
-				self->cov_(2,3) = self->cov_(3,2);
-				self->cov_(2,4) = self->cov_(4,2);
-				self->cov_(2,5) = self->cov_(5,2);
-				self->cov_(3,1) = self->cov_(1,3);
-				self->cov_(3,4) = self->cov_(4,3);
-				self->cov_(3,5) = self->cov_(5,3);
-				self->cov_(4,1) = self->cov_(1,4);
-				self->cov_(4,5) = self->cov_(5,4);
-				self->cov_(5,1) = self->cov_(1,5);
-
-				double det = self->cov_.block<3,3>(0,0).determinant();
-
-				if( det <= std::numeric_limits<double>::epsilon() ) {
-
-					self->cov_.block<3,3>(0,0) += 1e-9 * Eigen::Matrix3d::Identity();
-
-				}
-
-			}
-
-
-			self->up_to_date_ = true;
-			self->unevaluated_ = false;
-
-		}
-
-	};
-
-
-	template<>
-	struct GSurfel_unevaluator< 1 > {
-		void operator()( GSurfel< 1 >* self ) {
-			if( self->num_points_ > 0.0 ) {
-
-				self->mean_ *= self->num_points_;
-				self->cov_ *= self->num_points_;
-
-				self->unevaluated_ = true;
-
-			}
-		}
-	};
-
-
-
-	template< unsigned int MinPoints >
-	void GSurfel< MinPoints >::evaluate() {
-		GSurfel_evaluator< MinPoints >()( this );
-	}
-
-	template< unsigned int MinPoints >
-	void GSurfel< MinPoints >::unevaluate() {
-		GSurfel_unevaluator< MinPoints >()( this );
-	}
-
 
 };
-
 
 #endif /* SURFEL_H_ */
 

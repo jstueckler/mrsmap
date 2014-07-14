@@ -54,6 +54,8 @@
 
 namespace mrsmap {
 
+	class GSurfel;
+
 	class ShapeTextureFeature {
 	public:
 
@@ -70,8 +72,7 @@ namespace mrsmap {
 			num_points_ = 0.f;
 		}
 
-
-		void add( const Eigen::Matrix< double, 6, 1 >& p_src, const Eigen::Matrix< double, 6, 1 >& p_dst, const Eigen::Vector3d& n_src, const Eigen::Vector3d& n_dst, float weight );
+		void add( GSurfel* src, GSurfel* dst, float weight );
 
 		void add( const ShapeTextureFeature& feature, float weight ) {
 			shape_ += weight*feature.shape_;

@@ -4,8 +4,6 @@
 #include <Eigen/Core>
 #include <Eigen/Eigen>
 
-#include <cmath>
-
 
 namespace Eigen {
     typedef Matrix< float, 6, 1 > Vector6f;
@@ -90,7 +88,7 @@ inline Eigen::Vector3d ln_rotation( Eigen::Matrix3d & rotation ) {
     result(1) = (rotation(0,2)-rotation(2,0))*0.5;
     result(2) = (rotation(1,0)-rotation(0,1))*0.5;
 
-    double sin_angle_abs = result.norm(); //std::sqrt(result*result);
+    double sin_angle_abs = result.norm(); //sqrt(result*result);
     if (cos_angle > M_SQRT1_2)
     {            // (0 - Pi/4( use asin
         if(sin_angle_abs > 0){
@@ -145,7 +143,7 @@ inline Vector6d ln_affine( const Eigen::Matrix4d & m )
     Matrix3d r = m.block<3,3>(0,0);
 
     Vector3d rot = ln_rotation( r );
-    const double theta =  rot.norm(); //std::sqrt(rot*rot);
+    const double theta =  rot.norm(); //sqrt(rot*rot);
 
     double shtot = 0.5;
     if(theta > 0.00001)
@@ -344,8 +342,7 @@ inline int EM_To_Q(Eigen::Vector3d& v, Eigen::Quaterniond & q, int reparam)
 inline void Partial_Q_Partial_3V(const Eigen::Vector3d & v, int i, Eigen::Vector4d& dq_dvi)
 {
     double   theta = v.norm();
-    double   cosp = std::cos(.5*theta);
-    double   sinp = std::sin(.5*theta);
+    double   cosp = std::cos(.5*theta), sinp = std::sin(.5*theta);
 
     assert(i>=0 && i<3);
 

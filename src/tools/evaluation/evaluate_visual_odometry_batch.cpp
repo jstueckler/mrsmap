@@ -36,8 +36,8 @@
  */
 
 
+/*
 
- 
 #include <pcl/point_types.h>
 #include <pcl/common/transforms.h>
 
@@ -56,7 +56,7 @@
 #include <boost/thread/thread.hpp>
 #include "pcl/common/common_headers.h"
 #include "pcl/visualization/pcl_visualizer.h"
- 
+
 
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
@@ -401,12 +401,12 @@ public:
 
 //    Viewer viewer_;
 
-};
+};*/
 
 
 int main(int argc, char** argv) {
 
-	po::options_description desc("Allowed options");
+	/*po::options_description desc("Allowed options");
 
 	std::string inputpath = "";
 	int frameskips = 0;
@@ -448,7 +448,7 @@ int main(int argc, char** argv) {
 //	while( ev.viewer_.is_running ) {
 //		ev.viewer_.spinOnce();
 //		usleep(1000);
-//	}
+//	}*/
 
 	return 0;
 }

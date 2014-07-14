@@ -53,6 +53,7 @@
 // takes in two map for which it estimates the rigid transformation with a coarse-to-fine strategy.
 namespace mrsmap {
 
+	template <typename TMRSMap>
 	class MultiResolutionSurfelRegistration {
 	public:
 
@@ -109,7 +110,6 @@ namespace mrsmap {
 
 		};
 
-
 		MultiResolutionSurfelRegistration();
 		MultiResolutionSurfelRegistration( const Params& params );
 		~MultiResolutionSurfelRegistration() {}
@@ -165,14 +165,14 @@ namespace mrsmap {
 		public:
 			SurfelAssociation()
 			: n_src_(NULL), src_(NULL), src_idx_(0), n_dst_(NULL), dst_(NULL), dst_idx_(0), match(0), loglikelihood_(0.0) {}
-			SurfelAssociation( spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n_src, MultiResolutionSurfelMap::Surfel* src, unsigned int src_idx, spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n_dst, MultiResolutionSurfelMap::Surfel* dst, unsigned int dst_idx )
+			SurfelAssociation( spatialaggregate::OcTreeNode< float, typename TMRSMap::NodeValue >* n_src, typename TMRSMap::Surfel* src, unsigned int src_idx, spatialaggregate::OcTreeNode< float, typename TMRSMap::NodeValue >* n_dst, typename TMRSMap::Surfel* dst, unsigned int dst_idx )
 			: n_src_(n_src), src_(src), src_idx_(src_idx), n_dst_(n_dst), dst_(dst), dst_idx_(dst_idx), match(1), loglikelihood_(0.0) {}
 			~SurfelAssociation() {}
 
 			void revert() {
 
-				spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n_tmp_ = n_src_;
-				MultiResolutionSurfelMap::Surfel* tmp_ = src_;
+				spatialaggregate::OcTreeNode< float, typename TMRSMap::NodeValue >* n_tmp_ = n_src_;
+				typename TMRSMap::Surfel* tmp_ = src_;
 				unsigned int tmp_idx_ = src_idx_;
 
 				n_src_ = n_dst_;
@@ -185,11 +185,11 @@ namespace mrsmap {
 
 			}
 
-			spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n_src_;
-			MultiResolutionSurfelMap::Surfel* src_;
+			spatialaggregate::OcTreeNode< float, typename TMRSMap::NodeValue >* n_src_;
+			typename TMRSMap::Surfel* src_;
 			unsigned int src_idx_;
-			spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n_dst_;
-			MultiResolutionSurfelMap::Surfel* dst_;
+			spatialaggregate::OcTreeNode< float, typename TMRSMap::NodeValue >* n_dst_;
+			typename TMRSMap::Surfel* dst_;
 			unsigned int dst_idx_;
 
 			Eigen::Matrix< double, 6, 1 > df_dx;
@@ -252,25 +252,25 @@ namespace mrsmap {
 		public:
 			NodeLogLikelihood()
 			: n_(NULL), loglikelihood_(0.0) {}
-			NodeLogLikelihood( spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n )
+			NodeLogLikelihood( spatialaggregate::OcTreeNode< float, typename TMRSMap::NodeValue >* n )
 			: n_(n), loglikelihood_(0.0) {}
 			~NodeLogLikelihood() {}
 
-			spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n_;
+			spatialaggregate::OcTreeNode< float, typename TMRSMap::NodeValue >* n_;
 
 			double loglikelihood_;
 
-			SurfelAssociation surfelassocs_[MultiResolutionSurfelMap::NodeValue::num_surfels_];
+			SurfelAssociation surfelassocs_[TMRSMap::NodeValue::num_surfels_];
 
 		};
 
 		typedef std::vector< NodeLogLikelihood > NodeLogLikelihoodList;
 
 
-		void associateMapsBreadthFirstParallel( SurfelAssociationList& surfelAssociations, MultiResolutionSurfelMap& source, MultiResolutionSurfelMap& target, algorithm::OcTreeSamplingVectorMap< float, MultiResolutionSurfelMap::NodeValue >& targetSamplingMap, Eigen::Matrix4d& transform, double minResolution, double maxResolution, double searchDistFactor, double maxSearchDist, bool useFeatures );
+		void associateMapsBreadthFirstParallel( SurfelAssociationList& surfelAssociations, TMRSMap& source, TMRSMap& target, algorithm::OcTreeSamplingVectorMap< float, typename TMRSMap::NodeValue >& targetSamplingMap, Eigen::Matrix4d& transform, double minResolution, double maxResolution, double searchDistFactor, double maxSearchDist, bool useFeatures );
 
 
-		void associateNodeListParallel( SurfelAssociationList& surfelAssociations, MultiResolutionSurfelMap& source, MultiResolutionSurfelMap& target, std::vector< spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* >& nodes, int processDepth, Eigen::Matrix4d& transform, double searchDistFactor, double maxSearchDist, bool useFeatures );
+		void associateNodeListParallel( SurfelAssociationList& surfelAssociations, TMRSMap& source, TMRSMap& target, std::vector< spatialaggregate::OcTreeNode< float, typename TMRSMap::NodeValue >* >& nodes, int processDepth, Eigen::Matrix4d& transform, double searchDistFactor, double maxSearchDist, bool useFeatures );
 
 		SurfelAssociationList revertSurfelAssociations( const SurfelAssociationList& surfelAssociations );
 
@@ -278,29 +278,288 @@ namespace mrsmap {
 
 		double preparePointFeatureDerivatives( const Eigen::Matrix<double, 6, 1>& x, double qw, double mahaldist );
 
+		class AssociateFunctor {
+		public:
+			AssociateFunctor( tbb::concurrent_vector< SurfelAssociation >* associations, const Params& params, TMRSMap* source, TMRSMap* target, std::vector< spatialaggregate::OcTreeNode< float, typename TMRSMap::NodeValue >* >* nodes, const Eigen::Matrix4d& transform, int processDepth, double searchDistFactor, double maxSearchDist, bool useFeatures );
 
-		std::pair< int, int > calculateNegLogLikelihood( double& logLikelihood, spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* node_src, spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* node_tgt, const Eigen::Matrix4d& transform, double spatial_z_cov_factor, double color_z_cov, double normal_z_cov, bool interpolate );
-		spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* calculateNegLogLikelihoodFeatureScoreN( double& logLikelihood, double& featureScore, bool& outOfImage, bool& virtualBorder, bool& occluded, spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* node, const MultiResolutionSurfelMap& target, const Eigen::Matrix4d& transform, double spatial_z_cov_factor, double color_z_cov, double normal_z_cov, bool interpolate = false );
-		spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* calculateNegLogLikelihoodN( double& logLikelihood, bool& outOfImage, bool& virtualBorder, bool& occluded, spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* node, const MultiResolutionSurfelMap& target, const Eigen::Matrix4d& transform, double spatial_z_cov_factor, double color_z_cov, double normal_z_cov, bool interpolate = false );
-		bool calculateNegLogLikelihood( double& likelihood, spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* node, const MultiResolutionSurfelMap& target, const Eigen::Matrix4d& transform, double spatial_z_cov_factor, double color_z_cov, double normal_z_cov, bool interpolate = false );
+			~AssociateFunctor();
 
-		spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* getOccluder( spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* node, const MultiResolutionSurfelMap& target, const Eigen::Matrix4d& transform );
-		spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* getOccluder2( const Eigen::Vector4f& p, const MultiResolutionSurfelMap& target, double z_similarity_factor );
+			void operator()( const tbb::blocked_range<size_t>& r ) const;
+
+			void operator()( spatialaggregate::OcTreeNode< float, typename TMRSMap::NodeValue >*& node ) const;
+
+			tbb::concurrent_vector<SurfelAssociation >* associations_;
+			Params params_;
+			TMRSMap* source_;
+			TMRSMap* target_;
+			std::vector< spatialaggregate::OcTreeNode< float, typename TMRSMap::NodeValue >* >* nodes_;
+			Eigen::Matrix4d transform_;
+			Eigen::Matrix4f transformf_;
+			Eigen::Matrix3d rotation_;
+			int process_depth_;
+			float process_resolution_, search_dist_, search_dist2_;
+			Eigen::Vector4f search_dist_vec_;
+			bool use_features_;
+			int num_vol_queries_, num_finds_, num_neighbors_;
+
+			EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+		};
+
+		class GradientFunctor {
+		public:
+			GradientFunctor( SurfelAssociationList* assocList, const Params& params, double tx, double ty, double tz, double qx, double qy, double qz, double qw, bool relativeDerivatives, bool deriv2 = false, bool interpolate_neighbors = true, bool derivZ = false );
+
+			~GradientFunctor();
+
+
+			void operator()( const tbb::blocked_range<size_t>& r ) const;
+
+			void operator()( SurfelAssociation& assoc ) const;
+
+
+			Params params_;
+
+			double tx, ty, tz, qx, qy, qz, qw;
+			Eigen::Matrix4d currentTransform;
+			Eigen::Vector3d ddiff_s_tx, ddiff_s_ty, ddiff_s_tz;
+			Eigen::Matrix3d dR_qx, dR_qy, dR_qz;
+			Eigen::Matrix3d dR_qxT, dR_qyT, dR_qzT;
+			Eigen::Vector3d dt_tx, dt_ty, dt_tz;
+		//	Eigen::Matrix3d cov_cc_add;
+			Eigen::Matrix3d currentRotation;
+			Eigen::Matrix3d currentRotationT;
+			Eigen::Vector3d currentTranslation;
+
+			// 2nd order derivatives
+			Eigen::Matrix3d d2R_qxx, d2R_qxy, d2R_qxz, d2R_qyy, d2R_qyz, d2R_qzz;
+			Eigen::Matrix3d d2R_qxxT, d2R_qxyT, d2R_qxzT, d2R_qyyT, d2R_qyzT, d2R_qzzT;
+
+			// 1st and 2nd order derivatives on Z
+			Eigen::Vector3d ddiff_dzsx, ddiff_dzsy, ddiff_dzsz;
+			Eigen::Vector3d ddiff_dzmx, ddiff_dzmy, ddiff_dzmz;
+			Eigen::Vector3d d2diff_qx_zsx, d2diff_qx_zsy, d2diff_qx_zsz;
+			Eigen::Vector3d d2diff_qy_zsx, d2diff_qy_zsy, d2diff_qy_zsz;
+			Eigen::Vector3d d2diff_qz_zsx, d2diff_qz_zsy, d2diff_qz_zsz;
+
+
+			bool relativeDerivatives_;
+			bool deriv2_, derivZ_;
+			bool interpolate_neighbors_;
+
+			SurfelAssociationList* assocList_;
+
+			EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+		};
+
+		class GradientFunctorLM {
+		public:
+
+
+			GradientFunctorLM( SurfelAssociationList* assocList, const Params& params, double tx, double ty, double tz, double qx, double qy, double qz, double qw, bool derivs, bool derivZ = false, bool interpolate_neighbors = false );
+
+			~GradientFunctorLM();
+
+
+			void operator()( const tbb::blocked_range<size_t>& r ) const;
+
+			void operator()( SurfelAssociation& assoc ) const;
+
+
+
+			Eigen::Matrix4d currentTransform;
+
+			Eigen::Vector3d currentTranslation;
+			Eigen::Vector3d dt_tx, dt_ty, dt_tz;
+
+			Eigen::Matrix3d currentRotation, currentRotationT;
+			Eigen::Matrix3d dR_qx, dR_qy, dR_qz;
+
+		    // 1st and 2nd order derivatives on Z
+		    Eigen::Vector3d ddiff_dzsx, ddiff_dzsy, ddiff_dzsz;
+		    Eigen::Vector3d ddiff_dzmx, ddiff_dzmy, ddiff_dzmz;
+		    Eigen::Vector3d d2diff_qx_zsx, d2diff_qx_zsy, d2diff_qx_zsz;
+		    Eigen::Vector3d d2diff_qy_zsx, d2diff_qy_zsy, d2diff_qy_zsz;
+		    Eigen::Vector3d d2diff_qz_zsx, d2diff_qz_zsy, d2diff_qz_zsz;
+
+
+			SurfelAssociationList* assocList_;
+
+			Params params_;
+
+			bool derivs_, derivZ_, interpolate_neighbors_;
+
+			EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+		};
+
+		class GradientFunctorPointFeature {
+		public:
+
+			inline Eigen::Matrix<double, 3, 6> dh_dx(const Eigen::Vector3d& m,const Eigen::Matrix3d& rot, const Eigen::Vector3d& transl) const ;
+
+
+			inline Eigen::Matrix3d dh_dm(const Eigen::Vector3d& m, const Eigen::Matrix3d& rot, const Eigen::Vector3d& transl) const ;
+
+			GradientFunctorPointFeature(TMRSMap* source,
+					TMRSMap* target,
+					FeatureAssociationList* assocList,
+					const Params& params,
+					MultiResolutionSurfelRegistration<TMRSMap>* reg, double tx,
+					double ty, double tz, double qx, double qy, double qz, double qw );
+
+			~GradientFunctorPointFeature();
+
+
+			double tx, ty, tz, qx, qy, qz, qw;
+			Eigen::Matrix4d currentTransform;
+			Eigen::Matrix3d dR_qx, dR_qy, dR_qz;
+
+			FeatureAssociationList* assocList_;
+			Params params_;
+
+			TMRSMap* source_;
+			TMRSMap* target_;
+
+			MultiResolutionSurfelRegistration<TMRSMap>* reg_;
+
+		public:
+			EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+		};
+
+		class MatchLogLikelihoodFunctor {
+		public:
+
+			MatchLogLikelihoodFunctor();
+			MatchLogLikelihoodFunctor( NodeLogLikelihoodList* nodes, Params params, TMRSMap* source, TMRSMap* target, const Eigen::Matrix4d& transform, const Eigen::Matrix4d& lastTransform, const Eigen::Matrix< double, 6, 6 >& pcov, double delta_t, bool addPoseCov );
+
+			~MatchLogLikelihoodFunctor();
+
+
+			void precomputeCovAdd( TMRSMap* target );
+
+			Eigen::Matrix< double, 3, 6 > diff_jac_for_pose( const Eigen::Vector3d& position ) const;
+
+		//	Eigen::Matrix< double, 1, 3 > diff_normals_jac_for_angvel( const Eigen::Vector3d& normal1, const Eigen::Vector3d& normal2 ) const;
+
+			double normalCovFromPoseCov( const Eigen::Vector3d& normal1, const Eigen::Vector3d& normal2, const Eigen::Matrix3d& poseCov ) const;
+
+			void operator()( const tbb::blocked_range<size_t>& r ) const;
+
+			void operator()( NodeLogLikelihood& node ) const;
+
+
+			NodeLogLikelihoodList* nodes_;
+			Params params_;
+			TMRSMap* source_;
+			TMRSMap* target_;
+			Eigen::Matrix4d transform_;
+			bool add_pose_cov_;
+
+			double normalStd;
+			double normalMinLogLikelihood;
+			double normalMinLogLikelihoodSeenThrough;
+
+
+			Eigen::Matrix4d targetToSourceTransform;
+			Eigen::Matrix3d currentRotation;
+			Eigen::Matrix3d currentRotationT;
+			Eigen::Vector3d currentTranslation;
+
+			Eigen::Matrix4d lastTransform;
+			Eigen::Matrix3d lastRotation;
+
+			Eigen::Matrix< double, 6, 6 > pcov_;
+			double delta_t_;
+
+			Eigen::Matrix3d cov_add_[MAX_REPRESENTABLE_DEPTH];
+
+		};
+
+		class MatchLogLikelihoodKnownAssociationsFunctor : public MatchLogLikelihoodFunctor {
+		public:
+
+			MatchLogLikelihoodKnownAssociationsFunctor( NodeLogLikelihoodList* associations, Params params, TMRSMap* source, TMRSMap* target, const Eigen::Matrix4d& transform, const Eigen::Matrix4d& lastTransform, const Eigen::Matrix< double, 6, 6 >& pcov, double delta_t, bool addPoseCov );
+
+			~MatchLogLikelihoodKnownAssociationsFunctor();
+
+
+			void operator()( const tbb::blocked_range<size_t>& r ) const;
+
+			void operator()( MultiResolutionSurfelRegistration::NodeLogLikelihood& node ) const;
+
+		};
+
+		// assumes model is in the target, and scene in source has a node image
+		class ShootThroughFunctor {
+		public:
+
+			ShootThroughFunctor(NodeLogLikelihoodList* nodes, Params params, TMRSMap* source, TMRSMap* target, const Eigen::Matrix4d& transform );
+
+			~ShootThroughFunctor();
+
+
+			void operator()( const tbb::blocked_range<size_t>& r ) const;
+
+			void operator()( NodeLogLikelihood& node ) const;
+
+			NodeLogLikelihoodList* nodes_;
+			Params params_;
+			TMRSMap* source_;
+			TMRSMap* target_;
+			Eigen::Matrix4d transform_, transform_inv_;
+			Eigen::Vector3d camera_pos_;
+
+		public:
+			EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+
+		};
+
+		class SelfMatchLogLikelihoodFunctor {
+		public:
+			SelfMatchLogLikelihoodFunctor( NodeLogLikelihoodList* nodes, Params params, TMRSMap* target );
+
+			~SelfMatchLogLikelihoodFunctor();
+
+
+			void operator()( const tbb::blocked_range<size_t>& r ) const;
+
+			void operator()(NodeLogLikelihood& node ) const;
+
+
+			NodeLogLikelihoodList* nodes_;
+			Params params_;
+			TMRSMap* target_;
+
+			double normalStd;
+			double normalMinLogLikelihood;
+
+		};
+
+		std::pair< int, int > calculateNegLogLikelihood( double& logLikelihood, spatialaggregate::OcTreeNode< float, typename TMRSMap::NodeValue >* node_src, spatialaggregate::OcTreeNode< float, typename TMRSMap::NodeValue >* node_tgt, const Eigen::Matrix4d& transform, double spatial_z_cov_factor, double color_z_cov, double normal_z_cov, bool interpolate );
+		spatialaggregate::OcTreeNode< float, typename TMRSMap::NodeValue >* calculateNegLogLikelihoodFeatureScoreN( double& logLikelihood, double& featureScore, bool& outOfImage, bool& virtualBorder, bool& occluded, spatialaggregate::OcTreeNode< float, typename TMRSMap::NodeValue >* node, const TMRSMap& target, const Eigen::Matrix4d& transform, double spatial_z_cov_factor, double color_z_cov, double normal_z_cov, bool interpolate = false );
+		spatialaggregate::OcTreeNode< float, typename TMRSMap::NodeValue >* calculateNegLogLikelihoodN( double& logLikelihood, bool& outOfImage, bool& virtualBorder, bool& occluded, spatialaggregate::OcTreeNode< float, typename TMRSMap::NodeValue >* node, const TMRSMap& target, const Eigen::Matrix4d& transform, double spatial_z_cov_factor, double color_z_cov, double normal_z_cov, bool interpolate = false );
+		bool calculateNegLogLikelihood( double& likelihood, spatialaggregate::OcTreeNode< float, typename TMRSMap::NodeValue >* node, const TMRSMap& target, const Eigen::Matrix4d& transform, double spatial_z_cov_factor, double color_z_cov, double normal_z_cov, bool interpolate = false );
+
+		spatialaggregate::OcTreeNode< float, typename TMRSMap::NodeValue >* getOccluder( spatialaggregate::OcTreeNode< float, typename TMRSMap::NodeValue >* node, const TMRSMap& target, const Eigen::Matrix4d& transform );
+		spatialaggregate::OcTreeNode< float, typename TMRSMap::NodeValue >* getOccluder2( const Eigen::Vector4f& p, const TMRSMap& target, double z_similarity_factor );
 
 		// transform from src to tgt
-		double calculateInPlaneLogLikelihood( spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n_src, spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n_tgt, const Eigen::Matrix4d& transform, double normal_z_cov );
+		double calculateInPlaneLogLikelihood( spatialaggregate::OcTreeNode< float, typename TMRSMap::NodeValue >* n_src, spatialaggregate::OcTreeNode< float, typename TMRSMap::NodeValue >* n_tgt, const Eigen::Matrix4d& transform, double normal_z_cov );
 
 
-		double matchLogLikelihood( MultiResolutionSurfelMap& source, MultiResolutionSurfelMap& target, Eigen::Matrix4d& transform, const Eigen::Matrix4d& lastTransform = Eigen::Matrix4d::Identity(), const Eigen::Matrix< double, 6, 6 >& pcov = Eigen::Matrix< double, 6, 6 >::Zero(), double delta_t = 1.0, bool addPoseCov = false );
-		double matchLogLikelihoodKnownAssociations( MultiResolutionSurfelMap& source, MultiResolutionSurfelMap& target, Eigen::Matrix4d& transform, NodeLogLikelihoodList& associations, const Eigen::Matrix4d& lastTransform = Eigen::Matrix4d::Identity(), const Eigen::Matrix< double, 6, 6 >& pcov = Eigen::Matrix< double, 6, 6 >::Zero(), double delta_t = 1.0, bool addPoseCov = false );
+		double matchLogLikelihood( TMRSMap& source, TMRSMap& target, Eigen::Matrix4d& transform, const Eigen::Matrix4d& lastTransform = Eigen::Matrix4d::Identity(), const Eigen::Matrix< double, 6, 6 >& pcov = Eigen::Matrix< double, 6, 6 >::Zero(), double delta_t = 1.0, bool addPoseCov = false );
+		double matchLogLikelihoodKnownAssociations( TMRSMap& source, TMRSMap& target, Eigen::Matrix4d& transform, NodeLogLikelihoodList& associations, const Eigen::Matrix4d& lastTransform = Eigen::Matrix4d::Identity(), const Eigen::Matrix< double, 6, 6 >& pcov = Eigen::Matrix< double, 6, 6 >::Zero(), double delta_t = 1.0, bool addPoseCov = false );
 
-//		double matchLogLikelihoodKnownAssociations( MultiResolutionSurfelMap& source, MultiResolutionSurfelMap& target, Eigen::Matrix4d& transform, SurfelAssociationList& surfelAssociations, const Eigen::Matrix4d& lastTransform = Eigen::Matrix4d::Identity(), const Eigen::Matrix< double, 6, 6 >& pcov = Eigen::Matrix< double, 6, 6 >::Zero(), double delta_t = 1.0, bool addPoseCov = false );
-//		NodeLogLikelihoodList precalculateNomatchLogLikelihoodKnownAssociations( MultiResolutionSurfelMap& source, MultiResolutionSurfelMap& target, Eigen::Matrix4d& transform, SurfelAssociationList& surfelAssociations, const Eigen::Matrix4d& lastTransform = Eigen::Matrix4d::Identity(), const Eigen::Matrix< double, 6, 6 >& pcov = Eigen::Matrix< double, 6, 6 >::Zero(), double delta_t = 1.0, bool addPoseCov = false );
-//		double nomatchLogLikelihoodKnownAssociations( MultiResolutionSurfelMap& source, MultiResolutionSurfelMap& target, Eigen::Matrix4d& transform, SurfelAssociationList& surfelAssociations, const Eigen::Matrix4d& lastTransform = Eigen::Matrix4d::Identity(), const Eigen::Matrix< double, 6, 6 >& pcov = Eigen::Matrix< double, 6, 6 >::Zero(), double delta_t = 1.0, bool addPoseCov = false );
+//		double matchLogLikelihoodKnownAssociations( TMRSMap& source, TMRSMap& target, Eigen::Matrix4d& transform, SurfelAssociationList& surfelAssociations, const Eigen::Matrix4d& lastTransform = Eigen::Matrix4d::Identity(), const Eigen::Matrix< double, 6, 6 >& pcov = Eigen::Matrix< double, 6, 6 >::Zero(), double delta_t = 1.0, bool addPoseCov = false );
+//		NodeLogLikelihoodList precalculateNomatchLogLikelihoodKnownAssociations( TMRSMap& source, TMRSMap& target, Eigen::Matrix4d& transform, SurfelAssociationList& surfelAssociations, const Eigen::Matrix4d& lastTransform = Eigen::Matrix4d::Identity(), const Eigen::Matrix< double, 6, 6 >& pcov = Eigen::Matrix< double, 6, 6 >::Zero(), double delta_t = 1.0, bool addPoseCov = false );
+//		double nomatchLogLikelihoodKnownAssociations( TMRSMap& source, TMRSMap& target, Eigen::Matrix4d& transform, SurfelAssociationList& surfelAssociations, const Eigen::Matrix4d& lastTransform = Eigen::Matrix4d::Identity(), const Eigen::Matrix< double, 6, 6 >& pcov = Eigen::Matrix< double, 6, 6 >::Zero(), double delta_t = 1.0, bool addPoseCov = false );
 //		void nomatchLogLikelihoodKnownAssociationsResetAssocs( const NodeLogLikelihoodList& nodes );
 //		double nomatchLogLikelihoodKnownAssociationsPreCalc( const NodeLogLikelihoodList& nodes );
 
-		double selfMatchLogLikelihood( MultiResolutionSurfelMap& target );
+		double selfMatchLogLikelihood( TMRSMap& target );
 
 		bool estimateTransformationNewton( Eigen::Matrix4d& transform, int coarseToFineIterations, int fineIterations );
 		bool estimateTransformationLevenbergMarquardt( Eigen::Matrix4d& transform, int maxIterations, SurfelAssociationList* surfelAssociations = NULL, bool knownAssociations = false, bool interpolate = false );
@@ -308,11 +567,11 @@ namespace mrsmap {
 		bool estimateTransformationLevenbergMarquardtPF( Eigen::Matrix4d& transform, int maxIterations, double featureAssocMahalDist, double minDelta, bool resetFeatures, double& mu, double& nu );
 		bool estimateTransformationGaussNewtonPF( Eigen::Matrix4d& transform, int maxIterations, double featureAssocMahalDist, double minDelta, bool resetFeatures );
 
-		bool estimateTransformation( MultiResolutionSurfelMap& source, MultiResolutionSurfelMap& target, Eigen::Matrix4d& transform, float startResolution, float stopResolution, pcl::PointCloud< pcl::PointXYZRGB >::Ptr correspondencesSourcePoints, pcl::PointCloud< pcl::PointXYZRGB >::Ptr correspondencesTargetPoints, int gradientIterations = 100, int coarseToFineIterations = 0, int fineIterations = 5 );
+		bool estimateTransformation( TMRSMap& source, TMRSMap& target, Eigen::Matrix4d& transform, float startResolution, float stopResolution, pcl::PointCloud< pcl::PointXYZRGB >::Ptr correspondencesSourcePoints, pcl::PointCloud< pcl::PointXYZRGB >::Ptr correspondencesTargetPoints, int gradientIterations = 100, int coarseToFineIterations = 0, int fineIterations = 5 );
 
 
-		bool estimatePoseCovariance( Eigen::Matrix< double, 6, 6 >& cov, MultiResolutionSurfelMap& source, MultiResolutionSurfelMap& target, Eigen::Matrix4d& transform, float startResolution, float stopResolution );
-		bool estimatePoseCovarianceLM( Eigen::Matrix< double, 6, 6 >& cov, MultiResolutionSurfelMap& source, MultiResolutionSurfelMap& target, Eigen::Matrix4d& transform, float startResolution, float stopResolution, SurfelAssociationList* surfelAssociations = NULL, bool knownAssociations = false );
+		bool estimatePoseCovariance( Eigen::Matrix< double, 6, 6 >& cov, TMRSMap& source, TMRSMap& target, Eigen::Matrix4d& transform, float startResolution, float stopResolution );
+		bool estimatePoseCovarianceLM( Eigen::Matrix< double, 6, 6 >& cov, TMRSMap& source, TMRSMap& target, Eigen::Matrix4d& transform, float startResolution, float stopResolution, SurfelAssociationList* surfelAssociations = NULL, bool knownAssociations = false );
 
 
 		void setPriorPoseEnabled( bool enabled ) { params_.use_prior_pose_ = enabled; }
@@ -321,18 +580,18 @@ namespace mrsmap {
 
 
 
-	    void improvedProposalMatchLogLikelihood( MultiResolutionSurfelMap& source, MultiResolutionSurfelMap& target,
+	    void improvedProposalMatchLogLikelihood( TMRSMap& source, TMRSMap& target,
 	            Geometry::PoseAndVelocity & pose, Geometry::PoseAndVelocity & poseOut, double& likelihood, const int numRegistrationStepsCoarse, const int numRegistrationStepsFine, bool add_pose_cov,
 	            pcl::PointCloud<pcl::PointXYZRGB>* modelCloud = 0, pcl::PointCloud<pcl::PointXYZRGB>* sceneCloud = 0, const int minDepth = 10, const int maxDepth = 12 );
 
-	    void improvedProposalMatchLogLikelihoodKnownAssociations( MultiResolutionSurfelMap& source, MultiResolutionSurfelMap& target,
+	    void improvedProposalMatchLogLikelihoodKnownAssociations( TMRSMap& source, TMRSMap& target,
 	            Geometry::PoseAndVelocity & pose, Geometry::PoseAndVelocity & poseOut, double & likelihood,
 	            NodeLogLikelihoodList& associations, bool add_pose_cov, pcl::PointCloud<pcl::PointXYZRGB>* modelCloud = 0, pcl::PointCloud<pcl::PointXYZRGB>* sceneCloud = 0, const int minDepth = 10, const int maxDepth = 12 );
 
-	    void getAssociations( SurfelAssociationList& surfelAssociations, MultiResolutionSurfelMap& source, MultiResolutionSurfelMap& target,
+	    void getAssociations( SurfelAssociationList& surfelAssociations, TMRSMap& source, TMRSMap& target,
 	            const Geometry::Pose & pose );
 
-	    bool  registerPose( SurfelAssociationList& surfelAssociations, MultiResolutionSurfelMap& source, MultiResolutionSurfelMap& target,
+	    bool  registerPose( SurfelAssociationList& surfelAssociations, TMRSMap& source, TMRSMap& target,
 	            Geometry::PoseWithCovariance & pose, Geometry::PoseWithCovariance & poseOut,
 	             pcl::PointCloud< pcl::PointXYZRGB >::Ptr & corrSrc,
 	             pcl::PointCloud< pcl::PointXYZRGB >::Ptr & corrTgt,
@@ -340,7 +599,7 @@ namespace mrsmap {
 	             bool regularizeRegistration = false,
 	             const Eigen::Matrix6d& registrationPriorPoseCov = Eigen::Matrix6d::Identity() );
 
-	    bool  registerPoseKnownAssociations( SurfelAssociationList& surfelAssociations, MultiResolutionSurfelMap& source, MultiResolutionSurfelMap& target,
+	    bool  registerPoseKnownAssociations( SurfelAssociationList& surfelAssociations, TMRSMap& source, TMRSMap& target,
 	            Geometry::PoseWithCovariance & pose, Geometry::PoseWithCovariance & poseOut,
 	             pcl::PointCloud< pcl::PointXYZRGB >::Ptr & corrSrc,
 	             pcl::PointCloud< pcl::PointXYZRGB >::Ptr & corrTgt,
@@ -352,12 +611,12 @@ namespace mrsmap {
 
 		Params params_;
 
-		MultiResolutionSurfelMap* source_;
-		MultiResolutionSurfelMap* target_;
+		TMRSMap* source_;
+		TMRSMap* target_;
 //		SurfelAssociationList surfelAssociations_;
 		FeatureAssociationList featureAssociations_;
-		algorithm::OcTreeSamplingVectorMap< float, MultiResolutionSurfelMap::NodeValue > targetSamplingMap_;
-//		float lastWSign_;
+		algorithm::OcTreeSamplingVectorMap< float, typename TMRSMap::NodeValue > targetSamplingMap_;
+		float lastWSign_;
 		bool interpolate_neighbors_;
 
 		pcl::PointCloud< pcl::PointXYZRGB >::Ptr correspondences_source_points_;
@@ -394,21 +653,25 @@ namespace mrsmap {
 
 	protected:
 
-		bool registrationErrorFunctionWithFirstDerivative( const Eigen::Matrix< double, 6, 1 >& x, double qwSign, double& f, Eigen::Matrix< double, 6, 1 >& df_dx, MultiResolutionSurfelRegistration::SurfelAssociationList& surfelAssociations );
-		bool registrationErrorFunctionWithFirstAndSecondDerivative( const Eigen::Matrix< double, 6, 1 >& x, double qwSign, bool relativeDerivative, double& f, Eigen::Matrix< double, 6, 1 >& df_dx, Eigen::Matrix< double, 6, 6 >& d2f_dx2, MultiResolutionSurfelRegistration::SurfelAssociationList& surfelAssociations );
+		bool registrationErrorFunctionWithFirstDerivative( const Eigen::Matrix< double, 6, 1 >& x, double& f, Eigen::Matrix< double, 6, 1 >& df_dx, MultiResolutionSurfelRegistration::SurfelAssociationList& surfelAssociations );
+		bool registrationErrorFunctionWithFirstAndSecondDerivative( const Eigen::Matrix< double, 6, 1 >& x, bool relativeDerivative, double& f, Eigen::Matrix< double, 6, 1 >& df_dx, Eigen::Matrix< double, 6, 6 >& d2f_dx2, MultiResolutionSurfelRegistration::SurfelAssociationList& surfelAssociations );
 
-		bool registrationErrorFunctionLM( const Eigen::Matrix<double, 6, 1>& x, double qwSign, double& f, MultiResolutionSurfelRegistration::SurfelAssociationList& surfelAssociations, MultiResolutionSurfelRegistration::FeatureAssociationList& featureAssociations, double mahaldist );
+		bool registrationErrorFunctionLM( const Eigen::Matrix<double, 6, 1>& x, double& f, MultiResolutionSurfelRegistration::SurfelAssociationList& surfelAssociations, MultiResolutionSurfelRegistration::FeatureAssociationList& featureAssociations, double mahaldist );
 
-		bool registrationSurfelErrorFunctionWithFirstAndSecondDerivativeLM( const Eigen::Matrix< double, 6, 1 >& x, double qwSign, double& f, Eigen::Matrix< double, 6, 1 >& df, Eigen::Matrix< double, 6, 6 >& d2f, MultiResolutionSurfelRegistration::SurfelAssociationList& surfelAssociations );
+		bool registrationSurfelErrorFunctionWithFirstAndSecondDerivativeLM( const Eigen::Matrix< double, 6, 1 >& x, double& f, Eigen::Matrix< double, 6, 1 >& df, Eigen::Matrix< double, 6, 6 >& d2f, MultiResolutionSurfelRegistration::SurfelAssociationList& surfelAssociations );
 
 
 	public:
 		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 	};
 
+	template <typename TMRSMap> bool pointOccluded( const Eigen::Vector4f& p, const TMRSMap& target, double z_similarity_factor );
+	template <typename TMRSMap> bool pointSeenThrough( const Eigen::Vector4f& p, const TMRSMap& target, double z_similarity_factor, bool markSeenThrough = false );
+
 
 };
 
+#include <mrsmap/registration/impl/multiresolution_surfel_registration.hpp>
 
 #endif /* MULTIRESOLUTION_SURFEL_REGISTRATION_H_ */
 

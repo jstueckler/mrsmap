@@ -70,6 +70,7 @@ using namespace mrsmap;
 // parses Juergen Sturm's datasets (tgz archives + timestamp associations)
 // simply takes the base path of the dataset
 
+typedef MultiResolutionSurfelMap<GSurfel, 6> MRSMap;
 
 class EvaluateVisualOdometry
 {
@@ -95,8 +96,8 @@ public:
 		alloc_idx_ = 0;
 
 		for( int i = 0; i < 2; i++ ) {
-			imageAllocator_[i] = boost::shared_ptr< MultiResolutionSurfelMap::ImagePreAllocator >( new MultiResolutionSurfelMap::ImagePreAllocator() );
-			treeNodeAllocator_[i] = boost::shared_ptr< spatialaggregate::OcTreeNodeDynamicAllocator< float, MultiResolutionSurfelMap::NodeValue > >( new spatialaggregate::OcTreeNodeDynamicAllocator< float, MultiResolutionSurfelMap::NodeValue >( 1000 ) );
+			imageAllocator_[i] = boost::shared_ptr< MRSMap::ImagePreAllocator >( new MRSMap::ImagePreAllocator() );
+			treeNodeAllocator_[i] = boost::shared_ptr< spatialaggregate::OcTreeNodeDynamicAllocator< float, MRSMap::NodeValue > >( new spatialaggregate::OcTreeNodeDynamicAllocator< float, MRSMap::NodeValue >( 1000 ) );
 		}
 
 
@@ -113,7 +114,7 @@ public:
 		// provide dynamic node allocator
 		// use double buffers for image node and tree node allocators
     	treeNodeAllocator_[alloc_idx_]->reset();
-    	boost::shared_ptr< MultiResolutionSurfelMap > currFrameMap = boost::shared_ptr< MultiResolutionSurfelMap >( new MultiResolutionSurfelMap( min_resolution_, max_radius_, treeNodeAllocator_[alloc_idx_] ) );
+    	boost::shared_ptr< MRSMap > currFrameMap = boost::shared_ptr< MRSMap >( new MRSMap( min_resolution_, max_radius_, treeNodeAllocator_[alloc_idx_] ) );
 
 
 		// add points to local map
@@ -187,7 +188,7 @@ public:
 			stopwatch.reset();
 			pcl::PointCloud< pcl::PointXYZRGB >::Ptr corrSrc;
 			pcl::PointCloud< pcl::PointXYZRGB >::Ptr corrTgt;
-			MultiResolutionSurfelRegistration reg;
+			MultiResolutionSurfelRegistration<MRSMap> reg;
 
 			reg.params_.use_features_ = usefeatures_;
 			reg.params_.registration_use_color_ = usecolor_;
@@ -231,7 +232,6 @@ public:
     	lastTransform_.setIdentity();
 
     	std::vector< std::vector< std::string > > assocs;
-
     	int count = -1;
 
 		std::cout << path_ << "\n";
@@ -297,7 +297,7 @@ public:
 								if( viewer_.displayFeatureSimilarity ) {
 
 									Eigen::Vector4f pos = viewer_.selectedPoint.getVector4fMap();
-									spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* n = lastFrameMap_->octree_->findRepresentative( pos, viewer_.selectedDepth );
+									spatialaggregate::OcTreeNode< float, MRSMap::NodeValue >* n = lastFrameMap_->octree_->findRepresentative( pos, viewer_.selectedDepth );
 
 									pcl::PointCloud< pcl::PointXYZRGB >::Ptr cloudMap( new pcl::PointCloud< pcl::PointXYZRGB >() );
 
@@ -461,7 +461,7 @@ public:
 						lastFrameMap_->indexNodes( 0, 16, true );
 						unsigned int numNodes = lastFrameMap_->indexedNodes_.size();
 
-						algorithm::OcTreeSamplingVectorMap<float, MultiResolutionSurfelMap::NodeValue> target_sampling_map = algorithm::downsampleVectorOcTree(*lastFrameMap_->octree_, false, lastFrameMap_->octree_->max_depth_);
+						algorithm::OcTreeSamplingVectorMap<float, MRSMap::NodeValue> target_sampling_map = algorithm::downsampleVectorOcTree(*lastFrameMap_->octree_, false, lastFrameMap_->octree_->max_depth_);
 
 						lastFrameMap_->save("tmp.map");
 						struct stat filestatus;
@@ -507,7 +507,7 @@ public:
 	int downsampling_;
 	double dist_dep_;
 
-    boost::shared_ptr< MultiResolutionSurfelMap > lastFrameMap_;
+    boost::shared_ptr< MRSMap > lastFrameMap_;
     pcl::PointCloud< pcl::PointXYZRGB >::Ptr lastFrameCloud_;
 
     Eigen::Matrix4d lastTransform_;
@@ -517,8 +517,8 @@ public:
     float min_resolution_, max_radius_;
 
     unsigned int alloc_idx_;
-    boost::shared_ptr< MultiResolutionSurfelMap::ImagePreAllocator > imageAllocator_[2];
-    boost::shared_ptr< spatialaggregate::OcTreeNodeDynamicAllocator< float, MultiResolutionSurfelMap::NodeValue > > treeNodeAllocator_[2];
+    boost::shared_ptr< MRSMap::ImagePreAllocator > imageAllocator_[2];
+    boost::shared_ptr< spatialaggregate::OcTreeNodeDynamicAllocator< float, MRSMap::NodeValue > > treeNodeAllocator_[2];
 
     Viewer viewer_;
 
@@ -565,9 +565,15 @@ int main(int argc, char** argv) {
 		exit(0);
 	}
 
+	pcl::StopWatch watch;
+	watch.reset();
 
 	EvaluateVisualOdometry ev( inputpath, frameskips, intermediateskips, usefeatures, usecolor, usepointfeatures, usesurfels, mapprops, downsampling, debug, lambda );
 	ev.evaluate();
+
+	double time_evaluate_ = watch.getTimeSeconds();
+
+	cout << "total time: " << time_evaluate_ << endl;
 
 	if( debug ) {
 		while( ev.viewer_.is_running ) {

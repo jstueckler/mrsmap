@@ -43,6 +43,12 @@
 
 #include <vector>
 #include <set>
+#include <ostream>
+#include <fstream>
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+#include <limits>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
@@ -62,8 +68,15 @@
 #include <mrsmap/map/nodevalue.h>
 #include <mrsmap/map/surfelpair.h>
 #include <mrsmap/map/shapetexture_feature.h>
+#include <mrsmap/utilities/utilities.h>
+#include <mrsmap/utilities/eigen_extensions.h>
+
+
+#include <octreelib/feature/normalestimation.h>
+#include <octreelib/algorithm/downsample.h>
 
 #include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
 
 #include <pcl/common/time.h>
 
@@ -73,6 +86,8 @@
 #include <tbb/concurrent_queue.h>
 
 #include <flann/flann.h>
+
+
 
 
 namespace mrsmap {
@@ -104,13 +119,13 @@ namespace mrsmap {
 	};
 
 
-
+	template< typename TSurfel, unsigned int NumSurfels >
 	class MultiResolutionSurfelMap
 	{
 	public:
 
-		typedef GNodeValue< GSurfel< 1 >, 6 > NodeValue;
-		typedef GSurfel< 1 > Surfel;
+		typedef GNodeValue< GSurfel, NumSurfels > NodeValue;
+		typedef GSurfel Surfel;
 
 		class Params {
 		public:
@@ -189,6 +204,12 @@ namespace mrsmap {
 
 		void extents( Eigen::Matrix< double, 3, 1 >& mean, Eigen::Matrix< double, 3, 3 >& cov );
 
+		struct VisualizeSimilarityInfo {
+			pcl::PointCloud< pcl::PointXYZRGB >::Ptr cloudPtr;
+			int viewDir, depth;
+			spatialaggregate::OcTreeNode< float, NodeValue >* referenceNode;
+			bool simple;
+		};
 
 		struct NodeSurfel {
 			spatialaggregate::OcTreeNode< float, NodeValue >* node;
@@ -196,9 +217,9 @@ namespace mrsmap {
 		};
 
 
-		void addPoints( const boost::shared_ptr< const pcl::PointCloud<pcl::PointXYZRGB> >& cloud, const boost::shared_ptr< const std::vector< int > >& indices, bool smoothViewDir = false );
+		void addPoints( const boost::shared_ptr< const pcl::PointCloud<pcl::PointXYZRGB> >& cloud, const boost::shared_ptr< const std::vector< int > >& indices );
 
-		void addPoints( const pcl::PointCloud<pcl::PointXYZRGB>& cloud, const std::vector< int >& indices, bool smoothViewDir = false );
+		void addPoints( const pcl::PointCloud<pcl::PointXYZRGB>& cloud, const std::vector< int >& indices );
 
 		void addImage( const pcl::PointCloud<pcl::PointXYZRGB>& cloud, bool smoothViewDir = true, bool buildNodeImage = false );
 
@@ -226,6 +247,7 @@ namespace mrsmap {
 
 		void markBorderAtPoints( const pcl::PointCloud<pcl::PointXYZRGB>& cloud, const std::vector< int >& indices );
 
+		static inline void markBorderFromViewpointFunction( spatialaggregate::OcTreeNode< float, NodeValue >* current, spatialaggregate::OcTreeNode< float, NodeValue >* next, void* data );
 		void markBorderFromViewpoint( const Eigen::Vector3d& viewpoint );
 
 		static inline void clearBorderFlagFunction( spatialaggregate::OcTreeNode< float, NodeValue >* current, spatialaggregate::OcTreeNode< float, NodeValue >* next, void* data );
@@ -263,16 +285,16 @@ namespace mrsmap {
 		std::vector< unsigned int > findInliers( const std::vector< unsigned int >& indices, const pcl::PointCloud<pcl::PointXYZRGB>& cloud, int maxDepth );
 
 
-//		inline bool buildSurfelPair( SurfelPairSignature & signature, const Surfel& src, const Surfel& dst );
-//		int buildSurfelPairsForSurfel( spatialaggregate::OcTreeNode< float, NodeValue >* node, Surfel* srcSurfel, int surfelIdx, std::vector< spatialaggregate::OcTreeNode< float, NodeValue >* > & nodes, std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > > & pairs, float & maxDist, float samplingRate = 1.f );
-//
-//	    void buildSurfelPairs();
-//
-//	    void buildSurfelPairsHashmap();
-//
-//	    void buildSurfelPairsOnDepthParallel( std::vector< spatialaggregate::OcTreeNode< float, NodeValue >* >& nodes, int processDepth, float & maxDist );
-//
-//	    void buildSurfelPairsHashmapOnDepth( int processDepth  );
+		inline bool buildSurfelPair( SurfelPairSignature & signature, const Surfel& src, const Surfel& dst );
+		int buildSurfelPairsForSurfel( spatialaggregate::OcTreeNode< float, NodeValue >* node, Surfel* srcSurfel, int surfelIdx, std::vector< spatialaggregate::OcTreeNode< float, NodeValue >* > & nodes, std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > > & pairs, float & maxDist, float samplingRate = 1.f );
+
+	    void buildSurfelPairs();
+
+	    void buildSurfelPairsHashmap();
+
+	    void buildSurfelPairsOnDepthParallel( std::vector< spatialaggregate::OcTreeNode< float, NodeValue >* >& nodes, int processDepth, float & maxDist );
+
+	    void buildSurfelPairsHashmapOnDepth( int processDepth  );
 
 	    void buildSamplingMap();
 
@@ -345,11 +367,11 @@ namespace mrsmap {
 		boost::shared_ptr< flann::Index< flann::HammingPopcnt< unsigned char > > > lsh_index_;
 
 
-//		// key is feature descriptor, value is index of surfel pairs list in all_surfel_pairs
-//		std::vector< SurfelPairHashmap > surfel_pair_list_map_;
-//
-//		// list of surfel pairs for reference surfel
-//		std::vector< std::vector< SurfelPairVector > > all_surfel_pairs_;
+		// key is feature descriptor, value is index of surfel pairs list in all_surfel_pairs
+		std::vector< SurfelPairHashmap > surfel_pair_list_map_;
+
+		// list of surfel pairs for reference surfel
+		std::vector< std::vector< SurfelPairVector > > all_surfel_pairs_;
 
 		// list of reference surfels by depth
 		std::vector< std::vector< Surfel* > > reference_surfels_;
@@ -362,6 +384,7 @@ namespace mrsmap {
 
 		cv::Mat img_rgb_;
 
+
 	public:
 		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
@@ -371,6 +394,7 @@ namespace mrsmap {
 };
 
 
+#include <mrsmap/map/impl/multiresolution_surfel_map.hpp>
 
 
 #endif /* MULTIRESOLUTION_SURFEL_MAP_H_ */

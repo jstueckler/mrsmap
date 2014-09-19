@@ -101,6 +101,7 @@ set( SRC_MRSMAPLIB
 		src/map/shapetexture_feature.cpp
 		src/registration/multiresolution_surfel_registration.cpp
 		src/registration/multiresolution_soft_surfel_registration.cpp
+		src/registration/multiresolution_surfel_initial_alignment.cpp
 		src/utilities/utilities.cpp
 		src/visualization/visualization_map.cpp
 )
@@ -120,6 +121,7 @@ set( SRC_MRSSLAMLIB
 		src/map/shapetexture_feature.cpp
 		src/registration/multiresolution_surfel_registration.cpp
 		src/registration/multiresolution_soft_surfel_registration.cpp
+		src/registration/multiresolution_surfel_initial_alignment.cpp
 		src/utilities/utilities.cpp
 		src/visualization/visualization_map.cpp
 )

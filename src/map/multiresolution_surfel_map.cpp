@@ -3757,424 +3757,421 @@ unsigned int MultiResolutionSurfelMap::numSurfels() {
 }
 
 
-//void MultiResolutionSurfelMap::buildSurfelPairs( ) {
-//    surfel_pair_list_map_.resize( 17 );
-//    all_surfel_pairs_.resize( 17 );
-//    reference_surfels_.resize( 17 );
-//
-//    int maxDepth = this->octree_->max_depth_;
-//
-//    float minResolution = this->octree_->volumeSizeForDepth( maxDepth );
-//    float maxResolution = minResolution * 4.f;
-//
-//    minResolution *= 0.99f;
-//    maxResolution *= 1.01f;
-//
-//    float maxDist = -std::numeric_limits<float>::max();
-//
-//    for( int d = maxDepth; d >= 0; d-- ) {
-//
-//        const float processResolution = this->octree_->volumeSizeForDepth( d );
-//
-//        if( processResolution < minResolution || processResolution > maxResolution ) {
-//            continue;
-//        }
-//
-//        float maxDistAtDepth = 0.f;
-//        buildSurfelPairsOnDepthParallel( samplingMap_[d], d, maxDistAtDepth );
-//
-//        maxDist = std::max( maxDist, maxDistAtDepth );
+void MultiResolutionSurfelMap::buildSurfelPairs( ) {
+    surfel_pair_list_map_.resize( 17 );
+    all_surfel_pairs_.resize( 17 );
+    reference_surfels_.resize( 17 );
+
+    int maxDepth = this->octree_->max_depth_;
+
+    float minResolution = this->octree_->volumeSizeForDepth( maxDepth );
+    float maxResolution = minResolution * 4.f;
+
+    minResolution *= 0.99f;
+    maxResolution *= 1.01f;
+
+    float maxDist = -std::numeric_limits<float>::max();
+
+    for( int d = maxDepth; d >= 0; d-- ) {
+
+        const float processResolution = this->octree_->volumeSizeForDepth( d );
+
+        if( processResolution < minResolution || processResolution > maxResolution ) {
+            continue;
+        }
+
+        float maxDistAtDepth = 0.f;
+        buildSurfelPairsOnDepthParallel( samplingMap_[d], d, maxDistAtDepth );
+
+        maxDist = std::max( maxDist, maxDistAtDepth );
+    }
+
+    LOG_STREAM("Object diameter: " << maxDist );
+
+    this->surfelMaxDist_ = maxDist;
+}
+
+void MultiResolutionSurfelMap::buildSurfelPairsHashmap() {
+    int maxDepth = this->octree_->max_depth_;
+
+    float minResolution = this->octree_->volumeSizeForDepth( maxDepth );
+    float maxResolution = minResolution * 4.f;
+
+    minResolution *= 0.99f;
+    maxResolution *= 1.01f;
+
+    for ( int d = maxDepth; d >= 0; d-- )     {
+        const float processResolution = this->octree_->volumeSizeForDepth( d );
+
+        if( processResolution < minResolution || processResolution > maxResolution )
+            continue;
+
+        buildSurfelPairsHashmapOnDepth( d );
+    }
+}
+
+inline bool MultiResolutionSurfelMap::buildSurfelPair( SurfelPairSignature & signature, const Surfel& src, const Surfel& dst ) {
+
+    // surflet pair relation as in "model globally match locally"
+    Eigen::Vector3d p1 = src.mean_.block<3,1>(0,0);
+    Eigen::Vector3d p2 = dst.mean_.block<3,1>(0,0);
+    Eigen::Vector3d n1 = src.normal_;
+    Eigen::Vector3d n2 = dst.normal_;
+
+    Eigen::Vector3d d = p2-p1;
+    Eigen::Vector3d d_normalized = d / d.norm();
+
+    // normalize ranges to [0,1]
+    signature.shape_signature_(0) = d.norm();
+    signature.shape_signature_(1) = 0.5 * (n1.dot( d_normalized )+1.0);
+    signature.shape_signature_(2) = 0.5 * (n2.dot( d_normalized )+1.0);
+    signature.shape_signature_(3) = 0.5 * (n1.dot( n2 )+1.0);
+
+//    if ( signature.shape_signature_(3) > MAX_ANGLE_DIFF ) {
+//        if ( gsl_rng_uniform( r ) < 0.5f )
+//            return false;
 //    }
-//
-//    LOG_STREAM("Object diameter: " << maxDist );
-//
-//    this->surfelMaxDist_ = maxDist;
-//}
-//
-//void MultiResolutionSurfelMap::buildSurfelPairsHashmap() {
-//    int maxDepth = this->octree_->max_depth_;
-//
-//    float minResolution = this->octree_->volumeSizeForDepth( maxDepth );
-//    float maxResolution = minResolution * 4.f;
-//
-//    minResolution *= 0.99f;
-//    maxResolution *= 1.01f;
-//
-//    for ( int d = maxDepth; d >= 0; d-- )     {
-//        const float processResolution = this->octree_->volumeSizeForDepth( d );
-//
-//        if( processResolution < minResolution || processResolution > maxResolution )
-//            continue;
-//
-//        buildSurfelPairsHashmapOnDepth( d );
-//    }
-//}
-//
-//inline bool MultiResolutionSurfelMap::buildSurfelPair( SurfelPairSignature & signature, const Surfel& src, const Surfel& dst ) {
-//
-//    // surflet pair relation as in "model globally match locally"
-//    Eigen::Vector3d p1 = src.mean_.block<3,1>(0,0);
-//    Eigen::Vector3d p2 = dst.mean_.block<3,1>(0,0);
-//    Eigen::Vector3d n1 = src.normal_;
-//    Eigen::Vector3d n2 = dst.normal_;
-//
-//    Eigen::Vector3d d = p2-p1;
-//    Eigen::Vector3d d_normalized = d / d.norm();
-//
-//    // normalize ranges to [0,1]
-//    signature.shape_signature_(0) = d.norm();
-//    signature.shape_signature_(1) = 0.5 * (n1.dot( d_normalized )+1.0);
-//    signature.shape_signature_(2) = 0.5 * (n2.dot( d_normalized )+1.0);
-//    signature.shape_signature_(3) = 0.5 * (n1.dot( n2 )+1.0);
-//
-////    if ( signature.shape_signature_(3) > MAX_ANGLE_DIFF ) {
-////        if ( gsl_rng_uniform( r ) < 0.5f )
-////            return false;
-////    }
-//
-//    // color comparison with mean L alpha beta
-//    // normalize ranges to [0,1]
-//    signature.color_signature_ = dst.mean_.block<3,1>(3,0) - src.mean_.block<3,1>(3,0);
-//
-//	if ( signature.shape_signature_(3) > MAX_ANGLE_DIFF && fabsf(signature.color_signature_(0)) < MIN_LUMINANCE_DIFF && fabsf(signature.color_signature_(1)) < MIN_COLOR_DIFF && fabsf(signature.color_signature_(2)) < MIN_COLOR_DIFF ) {
-////		if ( gsl_rng_uniform( r ) < 0.5f )
-//			return false;
-//	}
-//
-//
-//    signature.color_signature_(0) = 0.5 * (signature.color_signature_(0)+1.0); // L in [0,1]
-//    signature.color_signature_(1) = 0.25 * (signature.color_signature_(1)+2.0); // alpha in [-1,1]
-//    signature.color_signature_(2) = 0.25 * (signature.color_signature_(2)+2.0); // beta in [-1,1]
-//
-//
-//
-////    signature.color_signature_src_ = src.mean_.block<3,1>(3,0);
-////    signature.color_signature_dst_ = dst.mean_.block<3,1>(3,0);
-////    signature.color_signature_src_(1) = 0.5 * ( signature.color_signature_src_(1) + 1.0 );
-////    signature.color_signature_src_(2) = 0.5 * ( signature.color_signature_src_(2) + 1.0 );
-////    signature.color_signature_dst_(1) = 0.5 * ( signature.color_signature_dst_(1) + 1.0 );
-////    signature.color_signature_dst_(2) = 0.5 * ( signature.color_signature_dst_(2) + 1.0 );
-//
-//    // transform from map frame to reference surfel frame
-//    // rotate x-axis along normal
-////	Eigen::Vector3d axis = n1.cross( Eigen::Vector3d::UnitX() ).normalized();
-////	float angle = acos ( n1.dot( Eigen::Vector3d::UnitX () ) );
-////	Eigen::Matrix3d refRot( Eigen::AngleAxisd ( angle, axis ) );
-//
-//    Eigen::Matrix4d transform_map_ref = Eigen::Matrix4d::Identity();
-//
-//    const Eigen::Vector7d & srcRefPose = src.reference_pose_;
-//    Eigen::Vector3d refTrans = srcRefPose.head<3>();
-//    Eigen::Matrix3d refRot = Eigen::Quaterniond ( srcRefPose.tail<4>() ).matrix();
-//
-//    transform_map_ref.block<3,3>( 0,0 ) = refRot.transpose();
-//    transform_map_ref.block<3,1>( 0,3 ) = -( refRot.transpose() * refTrans );
-//
-//    // compute the angle to rotate around the x-axis to align with positive y-axis
-//    Eigen::Vector4d p2_ref = transform_map_ref * Eigen::Vector4d( p2(0), p2(1), p2(2), 1.f);
-//    float alpha = atan2f ( -p2_ref(2), p2_ref(1));
-//    signature.alpha_ = alpha;
-//
-//    return true;
-//
-//}
-//
-//
-//int MultiResolutionSurfelMap::buildSurfelPairsForSurfel(
-//        spatialaggregate::OcTreeNode< float, NodeValue >* node,
-//        Surfel* srcSurfel,
-//        int surfelIdx,
-//        std::vector< spatialaggregate::OcTreeNode< float, NodeValue >* > & nodes,
-//        SurfelPairVector & pairs,
-//        float & maxDist,
-//        float samplingRate
-//        ) {
-//
-//    int step = (int)1.f / samplingRate;
-//
-//    if ( !srcSurfel->reference_pose_set )
-//        srcSurfel->updateReferencePose();
-//
-//    pairs.reserve( nodes.size() );
-//
-//    float maxResDist = node->resolution() * params_.surfelPairMaxDistResFactor_;
-//
-//    for ( std::vector< spatialaggregate::OcTreeNode< float, NodeValue >* >::iterator nodeIt =
-//          nodes.begin(); nodeIt < nodes.end(); std::advance( nodeIt, step ) ) {
-//        spatialaggregate::OcTreeNode< float, NodeValue >* currentNode = *nodeIt;
-//        if ( currentNode == node )
-//            continue;
-//
-//        Surfel* tgtSurfel = &( currentNode->value_.surfels_[surfelIdx] );
-//
-//        if( tgtSurfel->num_points_ < MultiResolutionSurfelMap::Surfel::min_points_ )
-//            continue;
-//
-//        if ( std::isnan( tgtSurfel->normal_(0) ) ||
-//             std::isnan( tgtSurfel->normal_(1) ) ||
-//             std::isnan( tgtSurfel->normal_(2) ) )
-//            continue;
-//
-//        float dist = (srcSurfel->mean_.block<3,1>(0,0) - tgtSurfel->mean_.block<3,1>(0,0)).norm();
-//
-//        if( dist > maxResDist )
-//        	continue;
-//
-//        SurfelPairSignature signature;
-//        bool success = buildSurfelPair( signature, *srcSurfel, *tgtSurfel );
-//
-//        if (!success)
-//            continue;
-//
-////        SurfelPair pair( srcSurfel, tgtSurfel, signature );
-//
-////        float dist = (float)signature.shape_signature_(0);
-//
-//        if ( dist > maxDist )
-//            maxDist = dist;
-//
-//        pairs.push_back( SurfelPair( srcSurfel, tgtSurfel, signature ) );
-//    }
-//
-//    return pairs.size();
-//}
-//
-//
-//template< typename TNodeValue >
-//class BuildSurfelPairsFunctor {
-//public:
-//
-//	typedef TNodeValue NodeValue;
-//	typedef typename TNodeValue::Surfel Surfel;
-//
-//    BuildSurfelPairsFunctor(
-//            MultiResolutionSurfelMap* map,
-//            tbb::concurrent_vector< std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > > >* surfel_pairs,
-//            tbb::concurrent_vector< Surfel* >* reference_surfels,
-////            std::vector< SurfelPairVector >* surfel_pairs,
-////            std::vector< Surfel* >* reference_surfels,
-////            tbb::concurrent_unordered_map< uint64, unsigned int >* surfel_pair_keys,
-//            std::vector< spatialaggregate::OcTreeNode< float, NodeValue >* >* nodes,
-//            tbb::atomic<float>* max_dist,
-//            const float samplingRate,
-//            const int processDepth
-//             ) {
-//        map_ = map;
-//        surfel_pairs_ = surfel_pairs;
-//        reference_surfels_ = reference_surfels;
-////        surfel_pair_keys_ = surfel_pair_keys;
-//        nodes_ = nodes;
-//        max_dist_ = max_dist;
-//        processDepth_ = processDepth;
-//        totalPairs_ = 0;
-//        samplingRate_ = samplingRate;
-//    }
-//
-//    void operator()( const tbb::blocked_range<size_t>& r ) const {
-//        for( size_t i=r.begin(); i!=r.end(); ++i )
-//            (*this)((*nodes_)[i]);
-//    }
-//
-//    void operator()( spatialaggregate::OcTreeNode< float, NodeValue >*& node ) const {
-//
-//        float maxDist = -std::numeric_limits<float>::max();
-//
-//        if ( gsl_rng_uniform( map_->r ) < ( 1.f - samplingRate_ ) )
-//            return;
-//
-//        // loop around the surfels and build surfel pair relations
-//        for ( unsigned int i = 0; i < NodeValue::num_surfels_; i++ ) {
-//            if( node->value_.surfels_[i].num_points_ >= MultiResolutionSurfelMap::Surfel::min_points_ ) {
-//            	Surfel* currentRefSurfel = &(node->value_.surfels_[i]);
-//                unsigned int currentSurfelIdx = i;
-//
-//                if ( std::isnan( currentRefSurfel->normal_(0) ) ||
-//                     std::isnan( currentRefSurfel->normal_(1) ) ||
-//                     std::isnan( currentRefSurfel->normal_(2) ) )
-//                    continue;
-//
-//                typename tbb::concurrent_vector< Surfel* >::iterator refSurfelIt = reference_surfels_->push_back( currentRefSurfel );
-////                unsigned int refIdx = reference_surfels_->size();
-////                reference_surfels_->push_back( currentRefSurfel );
-//                unsigned int refIdx = refSurfelIt - reference_surfels_->begin();
-//                currentRefSurfel->idx_ = refIdx;
-//
-//                tbb::concurrent_vector< std::vector<SurfelPair, Eigen::aligned_allocator< SurfelPair > > >::iterator pairit =
-//                        surfel_pairs_->grow_by( 1 );
-//
-////                surfel_pairs_->resize( surfel_pairs_->size() + 1, SurfelPairVector() );
-//
-//                SurfelPairVector & pairs = *pairit;
-////                SurfelPairVector & pairs = (*surfel_pairs_)[refIdx]; //*( surfel_pairs_->rbegin() );
-//
-//                map_->buildSurfelPairsForSurfel( node, currentRefSurfel, currentSurfelIdx,
-//                                                                     *nodes_, pairs, maxDist/*, samplingRate_*/ );
-//
-//
-////                for ( std::vector< spatialaggregate::OcTreeNode< float, NodeValue >* >::iterator nodeIt =
-////                      nodes_->begin(); nodeIt != nodes_->end(); nodeIt ) {
-////                    spatialaggregate::OcTreeNode< float, NodeValue >* currentNode = *nodeIt;
-////                    if ( currentNode == node )
-////                        continue;
-//
-////                    Surfel* tgtSurfel = &( currentNode->value_.surfels_[currentSurfelIdx] );
-//
-////                    if( tgtSurfel->num_points_ < NUM_SURFEL_POINTS_ROBUST )
-////                        continue;
-//
-////                    if ( std::isnan( tgtSurfel->normal_(0) ) ||
-////                         std::isnan( tgtSurfel->normal_(1) ) ||
-////                         std::isnan( tgtSurfel->normal_(2) ) )
-////                        continue;
-//
-//
-////                    SurfelPairSignature signature;
-////                    bool success = buildSurfelPair( signature, *currentRefSurfel, *tgtSurfel );
-//
-////                    if (!success)
-////                        continue;
-//
-////                    SurfelPair pair( currentRefSurfel, tgtSurfel, signature );
-//
-////                    float dist = (float)signature.shape_signature_(0);
-//
-////                    if ( dist > maxDist )
-////                        maxDist = dist;
-//
-////                    pairs.push_back( pair );
-////                    ++numFoundPairs;
-////                }
-//
-//                totalPairs_ += pairs.size();
-//            }
-//        }
-//
-//        if ( maxDist > *max_dist_ ) {
-//            tbb::atomic<float> old;
-//            do {
-//                old = *max_dist_;
-//                if ( maxDist < old )
-//                    break;
-//            } while ( max_dist_->compare_and_swap( maxDist, old ) != old );
-//        }
-//    }
-//
-//    MultiResolutionSurfelMap* map_;
-//    tbb::concurrent_vector< std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > > >* surfel_pairs_;
-//    tbb::concurrent_vector< Surfel* >* reference_surfels_;
-////    std::vector< SurfelPairVector >* surfel_pairs_;
-////    std::vector< Surfel* >* reference_surfels_;
-////    tbb::concurrent_unordered_map< uint64, unsigned int >* surfel_pair_keys_;
-//    std::vector< spatialaggregate::OcTreeNode< float, NodeValue >* >* nodes_;
-//    tbb::atomic<float>* max_dist_;
-//    int processDepth_;
-//    mutable int totalPairs_;
-//    float samplingRate_;
-//};
-//
-//
-//void MultiResolutionSurfelMap::buildSurfelPairsOnDepthParallel( std::vector< spatialaggregate::OcTreeNode< float, NodeValue >* >& nodes, int processDepth, float & maxDist ) {
-//
-//
-//    tbb::concurrent_vector< std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > > > surfel_pairs_on_depth;
-//    tbb::concurrent_vector< Surfel* > reference_surfels_on_depth;
-////    std::vector< std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > > > surfel_pairs_on_depth( 0, std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > >() );
-////    std::vector< Surfel* > reference_surfels_on_depth;
-//
-////    std::vector< Surfel* > & reference_surfels_on_depth = reference_surfels_[processDepth];
-////    std::vector< std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > > > & surfel_pairs_on_depth =
-////            all_surfel_pairs_[processDepth];
-//
-//    tbb::atomic<float> max_dist;
-//    max_dist = 0.f;
-////    tbb::concurrent_unordered_map< uint64, unsigned int > surfel_pair_keys_on_depth;
-//
-//    float processResolution = this->octree_->volumeSizeForDepth( processDepth );
-//    float targetNodesForDepth = 1.f / processResolution * 15;
-//    LOG_STREAM( "Target nodes: " << targetNodesForDepth );
-//    float samplingRate = std::max( 0.2f, std::min( params_.surfelPairSamplingRate_, targetNodesForDepth / (float)nodes.size() ) );
-//    if( params_.surfelPairSamplingRate_ > 2.f )
-//    	samplingRate = 1.f;
-//
-//    LOG_STREAM("Sampling rate: " << samplingRate << " param: " << params_.surfelPairSamplingRate_ );
-//
-//    reference_surfels_on_depth.reserve( (int) samplingRate * (float)nodes.size() );
-//    surfel_pairs_on_depth.reserve( (int) samplingRate * (float)nodes.size() );
-//
-//    BuildSurfelPairsFunctor< NodeValue > bf( this, &surfel_pairs_on_depth, &reference_surfels_on_depth, &nodes, &max_dist, samplingRate, processDepth );
-//
-//    LOG_STREAM("Processing depth [" << processDepth << "], nodes: " << nodes.size() );
-//
-//    if( params_.parallel_ )
-//        tbb::parallel_for_each( nodes.begin(), nodes.end(), bf );
-//    else
-//        std::for_each( nodes.begin(), nodes.end(), bf );
-//
-//
-//    all_surfel_pairs_[processDepth].resize( surfel_pairs_on_depth.size(), std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > >( ) );
-//    reference_surfels_[processDepth].resize( reference_surfels_on_depth.size(), 0 );
-//
-//    LOG_STREAM("Num ref surfels: " << reference_surfels_on_depth.size() );
-//    LOG_STREAM("Num pair vectors: " << surfel_pairs_on_depth.size() );
-//
-//    for( unsigned int i = 0; i<surfel_pairs_on_depth.size(); ++i ) {
-//        reference_surfels_[processDepth][i] = reference_surfels_on_depth[i];
-//        all_surfel_pairs_[processDepth][i].insert( all_surfel_pairs_[processDepth][i].end(),
-//                                                   surfel_pairs_on_depth[i].begin(),
-//                                                   surfel_pairs_on_depth[i].end() );
-//    }
-//
-////    reference_surfels_[processDepth].insert( reference_surfels_[processDepth].end(), reference_surfels_on_depth.begin(), reference_surfels_on_depth.end() );
-////    all_surfel_pairs_[processDepth].insert( all_surfel_pairs_[processDepth].end(), surfel_pairs_on_depth.begin(), surfel_pairs_on_depth.end() );
-//
-//    LOG_STREAM("Surfel pairs at depth [" << processDepth << "]: " << bf.totalPairs_ );
-//
-//    maxDist = *(bf.max_dist_);
-//
-////    surfel_pair_list_map_[d].insert( surfel_pair_keys_on_depth.begin(), surfel_pair_keys_on_depth.end() );
-//}
-//
-//
-//void MultiResolutionSurfelMap::buildSurfelPairsHashmapOnDepth( int processDepth  ) {
-//    const float bin_angle = params_.surfelPairFeatureBinAngle_;
-//    const float bin_dist = params_.surfelPairFeatureBinDist_ * octree_->resolutions_[processDepth];
-//
-//    std::unordered_map<SurfelPairKey, std::vector< SurfelPair*> > & key_map = surfel_pair_list_map_[processDepth];
-////    std::vector< std::vector< SurfelPair*> > & key_pairs = surfel_pairs_[processDepth];
-//    std::vector< std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > > > & ref_pairs = all_surfel_pairs_[processDepth];
-//
-//    for ( std::vector< std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > > >::iterator it =
-//          ref_pairs.begin(); it != ref_pairs.end(); ++it ) {
-//        std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > > & current_ref_pairs =
-//                *it;
-//
-//        for ( std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > >::iterator pair_it =
-//              current_ref_pairs.begin(); pair_it != current_ref_pairs.end(); ++pair_it ) {
-//            SurfelPair & pair = *pair_it;
-//            const SurfelPairKey key = pair.signature_.getKey( this->surfelMaxDist_, bin_dist, bin_angle, params_.surfelPairUseColor_ );
-//
-//            // insert into key map
-//
-//            std::unordered_map<SurfelPairKey, std::vector< SurfelPair*> >::const_iterator got =
-//                    key_map.find( key );
-//
-//            if ( got == key_map.end() ) {
-//                // insert!
-//
-////                const unsigned int idx = key_pairs.size();
-////                key_pairs.resize( key_pairs.size() + 1, std::vector < SurfelPair* >() );
-////                key_pairs[idx].push_back( &pair );
-////                key_map[key] = idx;
-//
-//                key_map.insert(std::make_pair(key, std::vector<SurfelPair*>() ) );
-//
-//            } //else {
-//
-//            key_map[key].push_back( &pair );
-//            //}
-//        }
-//    }
-//}
+
+    // color comparison with mean L alpha beta
+    // normalize ranges to [0,1]
+    signature.color_signature_ = dst.mean_.block<3,1>(3,0) - src.mean_.block<3,1>(3,0);
+
+	if ( signature.shape_signature_(3) > MAX_ANGLE_DIFF && fabsf(signature.color_signature_(0)) < MIN_LUMINANCE_DIFF && fabsf(signature.color_signature_(1)) < MIN_COLOR_DIFF && fabsf(signature.color_signature_(2)) < MIN_COLOR_DIFF ) {
+//		if ( gsl_rng_uniform( r ) < 0.5f )
+			return false;
+	}
+
+
+    signature.color_signature_(0) = 0.5 * (signature.color_signature_(0)+1.0); // L in [0,1]
+    signature.color_signature_(1) = 0.25 * (signature.color_signature_(1)+2.0); // alpha in [-1,1]
+    signature.color_signature_(2) = 0.25 * (signature.color_signature_(2)+2.0); // beta in [-1,1]
+
+
+
+//    signature.color_signature_src_ = src.mean_.block<3,1>(3,0);
+//    signature.color_signature_dst_ = dst.mean_.block<3,1>(3,0);
+//    signature.color_signature_src_(1) = 0.5 * ( signature.color_signature_src_(1) + 1.0 );
+//    signature.color_signature_src_(2) = 0.5 * ( signature.color_signature_src_(2) + 1.0 );
+//    signature.color_signature_dst_(1) = 0.5 * ( signature.color_signature_dst_(1) + 1.0 );
+//    signature.color_signature_dst_(2) = 0.5 * ( signature.color_signature_dst_(2) + 1.0 );
+
+    // transform from map frame to reference surfel frame
+    // rotate x-axis along normal
+//	Eigen::Vector3d axis = n1.cross( Eigen::Vector3d::UnitX() ).normalized();
+//	float angle = acos ( n1.dot( Eigen::Vector3d::UnitX () ) );
+//	Eigen::Matrix3d refRot( Eigen::AngleAxisd ( angle, axis ) );
+
+    Eigen::Matrix4d transform_map_ref = Eigen::Matrix4d::Identity();
+
+    const Eigen::Vector7d & srcRefPose = src.reference_pose_;
+    Eigen::Vector3d refTrans = srcRefPose.head<3>();
+    Eigen::Matrix3d refRot = Eigen::Quaterniond ( srcRefPose.tail<4>() ).matrix();
+
+    transform_map_ref.block<3,3>( 0,0 ) = refRot.transpose();
+    transform_map_ref.block<3,1>( 0,3 ) = -( refRot.transpose() * refTrans );
+
+    // compute the angle to rotate around the x-axis to align with positive y-axis
+    Eigen::Vector4d p2_ref = transform_map_ref * Eigen::Vector4d( p2(0), p2(1), p2(2), 1.f);
+    float alpha = atan2f ( -p2_ref(2), p2_ref(1));
+    signature.alpha_ = alpha;
+
+    return true;
+
+}
+
+
+int MultiResolutionSurfelMap::buildSurfelPairsForSurfel(
+        spatialaggregate::OcTreeNode< float, NodeValue >* node,
+        Surfel* srcSurfel,
+        int surfelIdx,
+        std::vector< spatialaggregate::OcTreeNode< float, NodeValue >* > & nodes,
+        SurfelPairVector & pairs,
+        float & maxDist,
+        float samplingRate
+        ) {
+
+    int step = (int)1.f / samplingRate;
+
+    if ( !srcSurfel->reference_pose_set )
+        srcSurfel->updateReferencePose();
+
+    pairs.reserve( nodes.size() );
+
+    float maxResDist = node->resolution() * params_.surfelPairMaxDistResFactor_;
+
+    for ( std::vector< spatialaggregate::OcTreeNode< float, NodeValue >* >::iterator nodeIt =
+          nodes.begin(); nodeIt < nodes.end(); std::advance( nodeIt, step ) ) {
+        spatialaggregate::OcTreeNode< float, NodeValue >* currentNode = *nodeIt;
+        if ( currentNode == node )
+            continue;
+
+        Surfel* tgtSurfel = &( currentNode->value_.surfels_[surfelIdx] );
+
+        if( tgtSurfel->num_points_ < MultiResolutionSurfelMap::Surfel::min_points_ )
+            continue;
+
+        if ( std::isnan( tgtSurfel->normal_(0) ) ||
+             std::isnan( tgtSurfel->normal_(1) ) ||
+             std::isnan( tgtSurfel->normal_(2) ) )
+            continue;
+
+        float dist = (srcSurfel->mean_.block<3,1>(0,0) - tgtSurfel->mean_.block<3,1>(0,0)).norm();
+
+        if( dist > maxResDist )
+        	continue;
+
+        SurfelPairSignature signature;
+        bool success = buildSurfelPair( signature, *srcSurfel, *tgtSurfel );
+
+        if (!success)
+            continue;
+
+//        SurfelPair pair( srcSurfel, tgtSurfel, signature );
+
+//        float dist = (float)signature.shape_signature_(0);
+
+        if ( dist > maxDist )
+            maxDist = dist;
+
+        pairs.push_back( SurfelPair( srcSurfel, tgtSurfel, signature ) );
+    }
+
+    return pairs.size();
+}
+
+
+template< typename TNodeValue >
+class BuildSurfelPairsFunctor {
+public:
+
+    BuildSurfelPairsFunctor(
+            MultiResolutionSurfelMap* map,
+            tbb::concurrent_vector< std::vector< MultiResolutionSurfelMap::SurfelPair, Eigen::aligned_allocator< MultiResolutionSurfelMap::SurfelPair > > >* surfel_pairs,
+            tbb::concurrent_vector< MultiResolutionSurfelMap::Surfel* >* reference_surfels,
+//            std::vector< MultiResolutionSurfelMap::SurfelPairVector >* surfel_pairs,
+//            std::vector< MultiResolutionSurfelMap::Surfel* >* reference_surfels,
+//            tbb::concurrent_unordered_map< uint64, unsigned int >* surfel_pair_keys,
+            std::vector< spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* >* nodes,
+            tbb::atomic<float>* max_dist,
+            const float samplingRate,
+            const int processDepth
+             ) {
+        map_ = map;
+        surfel_pairs_ = surfel_pairs;
+        reference_surfels_ = reference_surfels;
+//        surfel_pair_keys_ = surfel_pair_keys;
+        nodes_ = nodes;
+        max_dist_ = max_dist;
+        processDepth_ = processDepth;
+        totalPairs_ = 0;
+        samplingRate_ = samplingRate;
+    }
+
+    void operator()( const tbb::blocked_range<size_t>& r ) const {
+        for( size_t i=r.begin(); i!=r.end(); ++i )
+            (*this)((*nodes_)[i]);
+    }
+
+    void operator()( spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >*& node ) const {
+
+        float maxDist = -std::numeric_limits<float>::max();
+
+        if ( gsl_rng_uniform( map_->r ) < ( 1.f - samplingRate_ ) )
+            return;
+
+        // loop around the surfels and build surfel pair relations
+        for ( unsigned int i = 0; i < MultiResolutionSurfelMap::NodeValue::num_surfels_; i++ ) {
+            if( node->value_.surfels_[i].num_points_ >= MultiResolutionSurfelMap::Surfel::min_points_ ) {
+            	MultiResolutionSurfelMap::Surfel* currentRefSurfel = &(node->value_.surfels_[i]);
+                unsigned int currentSurfelIdx = i;
+
+                if ( std::isnan( currentRefSurfel->normal_(0) ) ||
+                     std::isnan( currentRefSurfel->normal_(1) ) ||
+                     std::isnan( currentRefSurfel->normal_(2) ) )
+                    continue;
+
+                typename tbb::concurrent_vector< MultiResolutionSurfelMap::Surfel* >::iterator refSurfelIt = reference_surfels_->push_back( currentRefSurfel );
+//                unsigned int refIdx = reference_surfels_->size();
+//                reference_surfels_->push_back( currentRefSurfel );
+                unsigned int refIdx = refSurfelIt - reference_surfels_->begin();
+                currentRefSurfel->idx_ = refIdx;
+
+                tbb::concurrent_vector< std::vector<MultiResolutionSurfelMap::SurfelPair, Eigen::aligned_allocator< MultiResolutionSurfelMap::SurfelPair > > >::iterator pairit =
+                        surfel_pairs_->grow_by( 1 );
+
+//                surfel_pairs_->resize( surfel_pairs_->size() + 1, MultiResolutionSurfelMap::SurfelPairVector() );
+
+                MultiResolutionSurfelMap::SurfelPairVector & pairs = *pairit;
+//                MultiResolutionSurfelMap::SurfelPairVector & pairs = (*surfel_pairs_)[refIdx]; //*( surfel_pairs_->rbegin() );
+
+                map_->buildSurfelPairsForSurfel( node, currentRefSurfel, currentSurfelIdx,
+                                                                     *nodes_, pairs, maxDist/*, samplingRate_*/ );
+
+
+//                for ( std::vector< spatialaggregate::OcTreeNode< float, NodeValue >* >::iterator nodeIt =
+//                      nodes_->begin(); nodeIt != nodes_->end(); nodeIt ) {
+//                    spatialaggregate::OcTreeNode< float, NodeValue >* currentNode = *nodeIt;
+//                    if ( currentNode == node )
+//                        continue;
+
+//                    Surfel* tgtSurfel = &( currentNode->value_.surfels_[currentSurfelIdx] );
+
+//                    if( tgtSurfel->num_points_ < NUM_SURFEL_POINTS_ROBUST )
+//                        continue;
+
+//                    if ( std::isnan( tgtSurfel->normal_(0) ) ||
+//                         std::isnan( tgtSurfel->normal_(1) ) ||
+//                         std::isnan( tgtSurfel->normal_(2) ) )
+//                        continue;
+
+
+//                    SurfelPairSignature signature;
+//                    bool success = buildSurfelPair( signature, *currentRefSurfel, *tgtSurfel );
+
+//                    if (!success)
+//                        continue;
+
+//                    SurfelPair pair( currentRefSurfel, tgtSurfel, signature );
+
+//                    float dist = (float)signature.shape_signature_(0);
+
+//                    if ( dist > maxDist )
+//                        maxDist = dist;
+
+//                    pairs.push_back( pair );
+//                    ++numFoundPairs;
+//                }
+
+                totalPairs_ += pairs.size();
+            }
+        }
+
+        if ( maxDist > *max_dist_ ) {
+            tbb::atomic<float> old;
+            do {
+                old = *max_dist_;
+                if ( maxDist < old )
+                    break;
+            } while ( max_dist_->compare_and_swap( maxDist, old ) != old );
+        }
+    }
+
+    MultiResolutionSurfelMap* map_;
+    tbb::concurrent_vector< std::vector< MultiResolutionSurfelMap::SurfelPair, Eigen::aligned_allocator< MultiResolutionSurfelMap::SurfelPair > > >* surfel_pairs_;
+    tbb::concurrent_vector< MultiResolutionSurfelMap::Surfel* >* reference_surfels_;
+//    std::vector< MultiResolutionSurfelMap::SurfelPairVector >* surfel_pairs_;
+//    std::vector< Surfel* >* reference_surfels_;
+//    tbb::concurrent_unordered_map< uint64, unsigned int >* surfel_pair_keys_;
+    std::vector< spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* >* nodes_;
+    tbb::atomic<float>* max_dist_;
+    int processDepth_;
+    mutable int totalPairs_;
+    float samplingRate_;
+};
+
+
+void MultiResolutionSurfelMap::buildSurfelPairsOnDepthParallel( std::vector< spatialaggregate::OcTreeNode< float, NodeValue >* >& nodes, int processDepth, float & maxDist ) {
+
+
+    tbb::concurrent_vector< std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > > > surfel_pairs_on_depth;
+    tbb::concurrent_vector< Surfel* > reference_surfels_on_depth;
+//    std::vector< std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > > > surfel_pairs_on_depth( 0, std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > >() );
+//    std::vector< Surfel* > reference_surfels_on_depth;
+
+//    std::vector< Surfel* > & reference_surfels_on_depth = reference_surfels_[processDepth];
+//    std::vector< std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > > > & surfel_pairs_on_depth =
+//            all_surfel_pairs_[processDepth];
+
+    tbb::atomic<float> max_dist;
+    max_dist = 0.f;
+//    tbb::concurrent_unordered_map< uint64, unsigned int > surfel_pair_keys_on_depth;
+
+    float processResolution = this->octree_->volumeSizeForDepth( processDepth );
+    float targetNodesForDepth = 1.f / processResolution * 15;
+    LOG_STREAM( "Target nodes: " << targetNodesForDepth );
+    float samplingRate = std::max( 0.2f, std::min( params_.surfelPairSamplingRate_, targetNodesForDepth / (float)nodes.size() ) );
+    if( params_.surfelPairSamplingRate_ > 2.f )
+    	samplingRate = 1.f;
+
+    LOG_STREAM("Sampling rate: " << samplingRate << " param: " << params_.surfelPairSamplingRate_ );
+
+    reference_surfels_on_depth.reserve( (int) samplingRate * (float)nodes.size() );
+    surfel_pairs_on_depth.reserve( (int) samplingRate * (float)nodes.size() );
+
+    BuildSurfelPairsFunctor< NodeValue > bf( this, &surfel_pairs_on_depth, &reference_surfels_on_depth, &nodes, &max_dist, samplingRate, processDepth );
+
+    LOG_STREAM("Processing depth [" << processDepth << "], nodes: " << nodes.size() );
+
+    if( params_.parallel_ )
+        tbb::parallel_for_each( nodes.begin(), nodes.end(), bf );
+    else
+        std::for_each( nodes.begin(), nodes.end(), bf );
+
+
+    all_surfel_pairs_[processDepth].resize( surfel_pairs_on_depth.size(), std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > >( ) );
+    reference_surfels_[processDepth].resize( reference_surfels_on_depth.size(), 0 );
+
+    LOG_STREAM("Num ref surfels: " << reference_surfels_on_depth.size() );
+    LOG_STREAM("Num pair vectors: " << surfel_pairs_on_depth.size() );
+
+    for( unsigned int i = 0; i<surfel_pairs_on_depth.size(); ++i ) {
+        reference_surfels_[processDepth][i] = reference_surfels_on_depth[i];
+        all_surfel_pairs_[processDepth][i].insert( all_surfel_pairs_[processDepth][i].end(),
+                                                   surfel_pairs_on_depth[i].begin(),
+                                                   surfel_pairs_on_depth[i].end() );
+    }
+
+//    reference_surfels_[processDepth].insert( reference_surfels_[processDepth].end(), reference_surfels_on_depth.begin(), reference_surfels_on_depth.end() );
+//    all_surfel_pairs_[processDepth].insert( all_surfel_pairs_[processDepth].end(), surfel_pairs_on_depth.begin(), surfel_pairs_on_depth.end() );
+
+    LOG_STREAM("Surfel pairs at depth [" << processDepth << "]: " << bf.totalPairs_ );
+
+    maxDist = *(bf.max_dist_);
+
+//    surfel_pair_list_map_[d].insert( surfel_pair_keys_on_depth.begin(), surfel_pair_keys_on_depth.end() );
+}
+
+
+void MultiResolutionSurfelMap::buildSurfelPairsHashmapOnDepth( int processDepth  ) {
+    const float bin_angle = params_.surfelPairFeatureBinAngle_;
+    const float bin_dist = params_.surfelPairFeatureBinDist_ * octree_->resolutions_[processDepth];
+
+    std::unordered_map<SurfelPairKey, std::vector< SurfelPair*> > & key_map = surfel_pair_list_map_[processDepth];
+//    std::vector< std::vector< SurfelPair*> > & key_pairs = surfel_pairs_[processDepth];
+    std::vector< std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > > > & ref_pairs = all_surfel_pairs_[processDepth];
+
+    for ( std::vector< std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > > >::iterator it =
+          ref_pairs.begin(); it != ref_pairs.end(); ++it ) {
+        std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > > & current_ref_pairs =
+                *it;
+
+        for ( std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > >::iterator pair_it =
+              current_ref_pairs.begin(); pair_it != current_ref_pairs.end(); ++pair_it ) {
+            SurfelPair & pair = *pair_it;
+            const SurfelPairKey key = pair.signature_.getKey( this->surfelMaxDist_, bin_dist, bin_angle, params_.surfelPairUseColor_ );
+
+            // insert into key map
+
+            std::unordered_map<SurfelPairKey, std::vector< SurfelPair*> >::const_iterator got =
+                    key_map.find( key );
+
+            if ( got == key_map.end() ) {
+                // insert!
+
+//                const unsigned int idx = key_pairs.size();
+//                key_pairs.resize( key_pairs.size() + 1, std::vector < SurfelPair* >() );
+//                key_pairs[idx].push_back( &pair );
+//                key_map[key] = idx;
+
+                key_map.insert(std::make_pair(key, std::vector<SurfelPair*>() ) );
+
+            } //else {
+
+            key_map[key].push_back( &pair );
+            //}
+        }
+    }
+}
 
 void MultiResolutionSurfelMap::buildSamplingMap( ) {
     this->samplingMap_ = algorithm::downsampleVectorOcTree( *(this->octree_), false, this->octree_->max_depth_ );

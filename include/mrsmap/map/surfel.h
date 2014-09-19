@@ -193,6 +193,7 @@ namespace mrsmap {
 	  bool seenThrough_; // TODO (Jan) pull this out to a vector
 
 	  int idx_;
+	  int ref_idx_;
 
 	  Eigen::Matrix< double, 7, 1 > reference_pose_;
 	  bool reference_pose_set;

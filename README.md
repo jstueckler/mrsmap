@@ -68,7 +68,7 @@ MRSMap depends on the following third party libraries:
 - OpenCV >= 2.4.8
 - CSparse
 - OctreeLib (from github: https://github.com/ais-hilgert/octreelib)
-- g2o (from github: https://github.com/RainerKuemmerle/g2o)
+- g2o (from github: https://github.com/RainerKuemmerle/g2o) [currently revision	67d5fa7 is supported]
 - Boost >= 1.54
 - ClooG
 

@@ -111,7 +111,7 @@ You can find some applications of the lib in the src/apps folder:
 
 * evaluate_pose_tracking: evaluates tracking performance on RGB-D datasets. call ./evaluate_pose_tracking -h to get further details.
 
-
+* Note that the maps and algorithms support a variety of settings. Important parameters on the map are e.g. the minimum number of points per surfel, distance dependency, or number of view directions in the voxels. Registration supports e.g. hard- and soft-associations, matching with color, etc. For small-scale objects, a good setting can be soft registration with min number of surfels set to 1. The dist dependency can also be lowered, if a near-range sensor is used. For matching of RGB-D images for indoor visual odometry or SLAM, hard-association registration can be used for efficiency reasons, but needs min number of surfels set to 10.    
 
 
 

@@ -74,6 +74,7 @@
 
 #include <flann/flann.h>
 
+#define MIN_NUM_POINTS_PER_SURFEL 10
 
 namespace mrsmap {
 
@@ -109,9 +110,9 @@ namespace mrsmap {
 	{
 	public:
 
-		typedef GNodeValue< GSurfel< 10 >, 6 > NodeValue;
-		typedef GSurfel< 10 > Surfel;
-		typedef GSurfelPair< 10 > SurfelPair;
+		typedef GNodeValue< GSurfel< MIN_NUM_POINTS_PER_SURFEL >, 6 > NodeValue;
+		typedef GSurfel< MIN_NUM_POINTS_PER_SURFEL > Surfel;
+		typedef GSurfelPair< MIN_NUM_POINTS_PER_SURFEL > SurfelPair;
 		typedef std::unordered_map< SurfelPairKey, std::vector< SurfelPair* > > SurfelPairHashmap;
 		typedef std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > > SurfelPairVector;
 

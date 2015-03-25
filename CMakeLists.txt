@@ -19,20 +19,20 @@ add_definitions( -std=c++0x )
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules/" ${CMAKE_MODULE_PATH})
 
 
-#IF( NOT CATKIN_DEVEL_PREFIX STREQUAL "" )
-#
-#  ## Find catkin macros and libraries
-#  ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-#  ## is used, also find other catkin packages
-#  find_package(catkin)
-#
-#  catkin_package(
-#    INCLUDE_DIRS include
-#    LIBRARIES mrsmap mrsslam
-#    DEPENDS system_lib
-#  )
-#
-#ENDIF()
+IF( NOT CATKIN_DEVEL_PREFIX STREQUAL "" )
+
+  ## Find catkin macros and libraries
+  ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
+  ## is used, also find other catkin packages
+  find_package(catkin)
+
+  catkin_package(
+    INCLUDE_DIRS include
+    LIBRARIES mrsmap mrsslam
+    DEPENDS system_lib
+  )
+
+ENDIF()
 
 
 # PCL required

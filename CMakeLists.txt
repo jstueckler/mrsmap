@@ -19,20 +19,20 @@ add_definitions( -std=c++0x )
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules/" ${CMAKE_MODULE_PATH})
 
 
-IF( NOT CATKIN_DEVEL_PREFIX STREQUAL "" )
-
-  ## Find catkin macros and libraries
-  ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-  ## is used, also find other catkin packages
-  find_package(catkin)
-
-  catkin_package(
-    INCLUDE_DIRS include
-    LIBRARIES mrsmap mrsslam
-    DEPENDS system_lib
-  )
-
-ENDIF()
+#IF( NOT CATKIN_DEVEL_PREFIX STREQUAL "" )
+#
+#  ## Find catkin macros and libraries
+#  ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
+#  ## is used, also find other catkin packages
+#  find_package(catkin)
+#
+#  catkin_package(
+#    INCLUDE_DIRS include
+#    LIBRARIES mrsmap mrsslam
+#    DEPENDS system_lib
+#  )
+#
+#ENDIF()
 
 
 # PCL required
@@ -142,4 +142,9 @@ add_executable( evaluate_visual_odometry_batch src/tools/evaluation/evaluate_vis
 add_definitions( ${SSE_FLAGS} )
 target_link_libraries( evaluate_visual_odometry_batch mrsmap ${Boost_PROGRAM_OPTIONS_LIBRARY} )
 
+
+# -- evaluate_slam for evaluation of slam performance on RGBD dataset
+add_executable( evaluate_slam src/tools/evaluation/evaluate_slam.cpp )
+add_definitions( ${SSE_FLAGS} )
+target_link_libraries( evaluate_slam mrsslam ${Boost_PROGRAM_OPTIONS_LIBRARY} ${G2O_CORE_LIBRARY} ${G2O_STUFF_LIBRARY} ${G2O_SOLVER_CSPARSE} ${G2O_SOLVER_CSPARSE_EXTENSION} ${G2O_TYPES_SLAM3D} )
 

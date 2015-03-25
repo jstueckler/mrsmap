@@ -57,7 +57,7 @@ using namespace mrsmap;
 
 #define REGISTER_TWICE 0
 
-#define SOFT_REGISTRATION 1
+#define SOFT_REGISTRATION 0
 
 
 #if SOFT_REGISTRATION

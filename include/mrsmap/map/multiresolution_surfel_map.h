@@ -109,9 +109,9 @@ namespace mrsmap {
 	{
 	public:
 
-		typedef GNodeValue< GSurfel< 1 >, 6 > NodeValue;
-		typedef GSurfel< 1 > Surfel;
-		typedef GSurfelPair< 1 > SurfelPair;
+		typedef GNodeValue< GSurfel< 10 >, 6 > NodeValue;
+		typedef GSurfel< 10 > Surfel;
+		typedef GSurfelPair< 10 > SurfelPair;
 		typedef std::unordered_map< SurfelPairKey, std::vector< SurfelPair* > > SurfelPairHashmap;
 		typedef std::vector< SurfelPair, Eigen::aligned_allocator< SurfelPair > > SurfelPairVector;
 

@@ -54,11 +54,12 @@
 #include "octreelib/algorithm/downsample.h"
 
 #include <list>
+#include <mrsmap/mrsmap_api.h>
 
 
 namespace mrsmap {
 
-	class MultiResolutionSoftSurfelRegistration {
+	class MRSMAP_API MultiResolutionSoftSurfelRegistration {
 	public:
 
 		class Params {

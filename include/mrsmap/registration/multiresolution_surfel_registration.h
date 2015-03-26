@@ -48,12 +48,13 @@
 #include "octreelib/algorithm/downsample.h"
 
 #include <list>
+#include <mrsmap/mrsmap_api.h>
 
 
 // takes in two map for which it estimates the rigid transformation with a coarse-to-fine strategy.
 namespace mrsmap {
 
-	class MultiResolutionSurfelRegistration {
+	class MRSMAP_API MultiResolutionSurfelRegistration {
 	public:
 
 		class Params {

@@ -1108,7 +1108,7 @@ bool MultiResolutionSoftSurfelRegistration::estimateTransformationLevenbergMarqu
 
 
 
-		if( isnan(qw) || fabsf(qx) > 1.f || fabsf(qy) > 1.f || fabsf(qz) > 1.f ) {
+		if( boost::math::isnan(qw) || fabsf(qx) > 1.f || fabsf(qy) > 1.f || fabsf(qz) > 1.f ) {
 			return false;
 		}
 

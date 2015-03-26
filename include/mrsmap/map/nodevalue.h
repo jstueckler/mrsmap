@@ -65,12 +65,14 @@
 
 #include <pcl/common/time.h>
 
+#define uchar flann_uchar
+#include <flann/flann.h>
+#undef uchar //Prevent ambiguous symbol error when OpenCV defines uchar
+
 #include <opencv2/opencv.hpp>
 
 #include <tbb/tbb.h>
 #include <tbb/concurrent_queue.h>
-
-#include <flann/flann.h>
 
 
 

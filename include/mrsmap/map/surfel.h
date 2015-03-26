@@ -201,7 +201,11 @@ namespace mrsmap {
 	  ShapeTextureFeature simple_shape_texture_features_; // TODO (Jan): move to outside vector on idx_
 	  ShapeTextureFeature agglomerated_shape_texture_features_;
 
+#if __cplusplus > 199711L
 	  static constexpr double min_points_ = MinPoints;
+#else
+	  const static double min_points_;
+#endif
 
 	public:
 	  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
@@ -351,6 +355,10 @@ namespace mrsmap {
 
 };
 
+#if __cplusplus <= 199711L
+template <unsigned int MinPoints>
+const double mrsmap::GSurfel<MinPoints>::min_points_ = MinPoints;
+#endif
 
 #endif /* SURFEL_H_ */
 

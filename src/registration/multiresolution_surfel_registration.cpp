@@ -195,7 +195,7 @@ void MultiResolutionSurfelRegistration::setPriorPose( bool enabled, const Eigen:
 
 spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* MultiResolutionSurfelRegistration::getOccluder2( const Eigen::Vector4f& p, const MultiResolutionSurfelMap& target, double z_similarity_factor ) {
 
-	if( isnan( p(0) ) )
+	if( boost::math::isnan( p(0) ) )
 		return NULL;
 
 	int px = 525.0 * p(0) / p(2) + 319.5;
@@ -236,7 +236,7 @@ spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* Mult
 
 bool pointOccluded( const Eigen::Vector4f& p, const MultiResolutionSurfelMap& target, double z_similarity_factor ) {
 
-	if( isnan( p(0) ) )
+	if( boost::math::isnan( p(0) ) )
 		return false;
 
 	int px = 525.0 * p(0) / p(2) + 319.5;
@@ -273,7 +273,7 @@ bool pointOccluded( const Eigen::Vector4f& p, const MultiResolutionSurfelMap& ta
 // the "reverse" of pointOccluded
 bool pointSeenThrough( const Eigen::Vector4f& p, const MultiResolutionSurfelMap& target, double z_similarity_factor, bool markSeenThrough = false ) {
 
-	if( isnan( p(0) ) )
+	if( boost::math::isnan( p(0) ) )
 		return false;
 
 	int px = 525.0 * p(0) / p(2) + 319.5;
@@ -2367,7 +2367,7 @@ public:
 		assoc.weight = weight;
 		assoc.match = 1;
 
-		assert( !isnan(error) );
+		assert( !boost::math::isnan(error) );
 
 
 
@@ -2781,7 +2781,7 @@ public:
 
 		assoc.match = 1;
 
-//		assert( !isnan(assoc.error) );
+//		assert( !boost::math::isnan(assoc.error) );
 
 
 	}
@@ -3758,7 +3758,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationNewton( Eigen::Mat
 
 
 
-		if( isnan(qw) || fabsf(qx) > 1.f || fabsf(qy) > 1.f || fabsf(qz) > 1.f ) {
+		if( boost::math::isnan(qw) || fabsf(qx) > 1.f || fabsf(qy) > 1.f || fabsf(qz) > 1.f ) {
 			x = last_x;
 			return false;
 		}
@@ -3996,7 +3996,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationLevenbergMarquardt
 
 
 
-		if( isnan(qw) || fabsf(qx) > 1.f || fabsf(qy) > 1.f || fabsf(qz) > 1.f ) {
+		if( boost::math::isnan(qw) || fabsf(qx) > 1.f || fabsf(qy) > 1.f || fabsf(qz) > 1.f ) {
 			return false;
 		}
 
@@ -4204,7 +4204,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationGaussNewton( Eigen
 
 
 
-		if( isnan(qw) || fabsf(qx) > 1.f || fabsf(qy) > 1.f || fabsf(qz) > 1.f ) {
+		if( boost::math::isnan(qw) || fabsf(qx) > 1.f || fabsf(qy) > 1.f || fabsf(qz) > 1.f ) {
 			std::cout << "GN registration failed\n";
 			return false;
 		}
@@ -4595,7 +4595,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationLevenbergMarquardt
 		qz = x(5);
 		qw = lastWSign_ * sqrt(1.0 - qx * qx - qy * qy - qz * qz);
 
-		if (isnan(qw) || fabsf(qx) > 1.f || fabsf(qy) > 1.f || fabsf(qz) > 1.f) {
+		if (boost::math::isnan(qw) || fabsf(qx) > 1.f || fabsf(qy) > 1.f || fabsf(qz) > 1.f) {
 			return false;
 		}
 
@@ -4924,7 +4924,7 @@ bool MultiResolutionSurfelRegistration::estimateTransformationGaussNewtonPF( Eig
 		qz = x(5);
 		qw = lastWSign_ * sqrt(1.0 - qx * qx - qy * qy - qz * qz);
 
-		if (isnan(qw) || fabsf(qx) > 1.f || fabsf(qy) > 1.f || fabsf(qz) > 1.f) {
+		if (boost::math::isnan(qw) || fabsf(qx) > 1.f || fabsf(qy) > 1.f || fabsf(qz) > 1.f) {
 			return false;
 		}
 
@@ -5270,7 +5270,7 @@ public:
 					nomatch_loglikelihood += normalMinLogLikelihood;
 			}
 
-			if( std::isinf(nomatch_loglikelihood) || std::isnan(nomatch_loglikelihood) )
+			if( boost::math::isinf(nomatch_loglikelihood) || boost::math::isnan(nomatch_loglikelihood) )
 				continue;
 
 			double bestSurfelLogLikelihood = nomatch_loglikelihood;
@@ -5383,10 +5383,10 @@ public:
 					}
 
 
-					if( std::isinf(nomatch_loglikelihood) || std::isnan( exponent ) ) {
+					if( boost::math::isinf(nomatch_loglikelihood) || boost::math::isnan( exponent ) ) {
 						continue;
 					}
-					if( std::isinf(nomatch_loglikelihood) || std::isnan(loglikelihood) )
+					if( boost::math::isinf(nomatch_loglikelihood) || boost::math::isnan(loglikelihood) )
 						continue;
 
 					if( loglikelihood > bestSurfelLogLikelihood ) {
@@ -5585,10 +5585,10 @@ public:
 
 				node.surfelassocs_[i].loglikelihood_ = 0.0;
 
-				if( std::isnan( exponent ) ) {
+				if( boost::math::isnan( exponent ) ) {
 					continue;
 				}
-				if( std::isnan(loglikelihood) )
+				if( boost::math::isnan(loglikelihood) )
 					continue;
 
 				node.surfelassocs_[i].loglikelihood_ = loglikelihood;
@@ -5932,7 +5932,7 @@ public:
 
 			nomatch_loglikelihood += normalMinLogLikelihood;
 
-			if( std::isinf(nomatch_loglikelihood) || std::isnan(nomatch_loglikelihood) )
+			if( boost::math::isinf(nomatch_loglikelihood) || boost::math::isnan(nomatch_loglikelihood) )
 				continue;
 
 			double bestSurfelLogLikelihood = nomatch_loglikelihood;
@@ -5951,7 +5951,7 @@ public:
 			double normalLogLikelihood = -0.5 * log( 2.0 * M_PI * normalStd );
 
 
-			if( std::isinf(nomatch_loglikelihood) || std::isnan(loglikelihood) )
+			if( boost::math::isinf(nomatch_loglikelihood) || boost::math::isnan(loglikelihood) )
 				continue;
 
 			bestSurfelLogLikelihood = std::max( bestSurfelLogLikelihood, loglikelihood + normalLogLikelihood );

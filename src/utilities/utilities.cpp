@@ -37,6 +37,8 @@
 
 #include "mrsmap/utilities/utilities.h"
 #include <boost/algorithm/string.hpp>
+#include <boost/math/special_functions/fpclassify.hpp>
+#include <boost/math/special_functions/round.hpp>
 
 using namespace mrsmap;
 
@@ -101,7 +103,7 @@ cv::Mat mrsmap::visualizeDepth( const cv::Mat& depthImg, float minDepth, float m
 
 Eigen::Vector2f mrsmap::pointImagePos( const Eigen::Vector4f& p ) {
 
-	if( isnan( p(0) ) )
+	if( boost::math::isnan( p(0) ) )
 		return Eigen::Vector2f( p(0), p(0) );
 
 	return Eigen::Vector2f( 525.0 * p(0) / p(2), 525.0 * p(1) / p(2) );
@@ -111,7 +113,7 @@ Eigen::Vector2f mrsmap::pointImagePos( const Eigen::Vector4f& p ) {
 
 bool mrsmap::pointInImage( const Eigen::Vector4f& p ) {
 
-	if( isnan( p(0) ) )
+	if( boost::math::isnan( p(0) ) )
 		return false;
 
 	double px = 525.0 * p(0) / p(2);
@@ -127,7 +129,7 @@ bool mrsmap::pointInImage( const Eigen::Vector4f& p ) {
 
 bool mrsmap::pointInImage( const Eigen::Vector4f& p, const unsigned int imageBorder ) {
 
-	if( isnan( p(0) ) )
+	if( boost::math::isnan( p(0) ) )
 		return false;
 
 	double px = 525.0 * p(0) / p(2);
@@ -377,7 +379,7 @@ double mrsmap::averageDepth( const pcl::PointCloud< pcl::PointXYZRGB >::ConstPtr
 
 			const pcl::PointXYZRGB& p = cloud->points[idx];
 
-			if( !isnan( p.z ) ) {
+			if( !boost::math::isnan( p.z ) ) {
 				sum += p.z;
 				num += 1.0;
 			}
@@ -401,7 +403,7 @@ double mrsmap::medianDepth( const pcl::PointCloud< pcl::PointXYZRGB >::ConstPtr&
 
 			const pcl::PointXYZRGB& p = cloud->points[idx];
 
-			if( !isnan( p.z ) ) {
+			if( !boost::math::isnan( p.z ) ) {
 				depths.push_back(p.z);
 			}
 
@@ -568,7 +570,7 @@ void mrsmap::reprojectPointCloudToImages( const pcl::PointCloud< pcl::PointXYZRG
 
 //			orig_img_rgb.at< cv::Vec3b >( y, x ) = px;
 
-			if( std::isnan( p.x ) ) {
+			if( boost::math::isnan( p.x ) ) {
 //				mapX.at< float >( y, x ) = -1.f;
 //				mapY.at< float >( y, x ) = -1.f;
 //				orig_img_depth.at< unsigned short >( y, x ) = 0;
@@ -585,8 +587,8 @@ void mrsmap::reprojectPointCloudToImages( const pcl::PointCloud< pcl::PointXYZRG
 //					orig_img_depth.at< unsigned short >( y, x ) = p.z*5000.f;
 
 
-				int ix = round(nx);
-				int iy = round(ny);
+				int ix = boost::math::round(nx);
+				int iy = boost::math::round(ny);
 
 				if( p.z > 0.2f && ix >= 0 && ix < img_rgb.cols && iy >= 0 && iy < img_rgb.rows ) {
 					img_depth.at< unsigned short >( iy, ix ) = p.z * 5000.f;
@@ -619,15 +621,15 @@ void mrsmap::reprojectPointCloudToImagesF( const pcl::PointCloud< pcl::PointXYZR
 			px[1] = p.g;
 			px[2] = p.r;
 
-			if( std::isnan( p.x ) ) {
+			if( boost::math::isnan( p.x ) ) {
 			}
 			else {
 
 				float nx = p.x / p.z * 525.f + 319.5f;
 				float ny = p.y / p.z * 525.f + 239.5f;
 
-				int ix = round(nx);
-				int iy = round(ny);
+				int ix = boost::math::round(nx);
+				int iy = boost::math::round(ny);
 
 				if( p.z > 0.2f && ix >= 0 && ix < img_rgb.cols && iy >= 0 && iy < img_rgb.rows ) {
 					img_depth.at< float >( iy, ix ) = p.z;
@@ -799,7 +801,7 @@ void mrsmap::downsamplePointCloudMean( const pcl::PointCloud< pcl::PointXYZRGB >
 			}
 
 
-			if( !std::isnan( cloudIn->points[y*cloudIn->width+x].x ) ) {
+			if( !boost::math::isnan( cloudIn->points[y*cloudIn->width+x].x ) ) {
 
 				point(0) += cloudIn->points[y*cloudIn->width+x].x;
 				point(1) += cloudIn->points[y*cloudIn->width+x].y;
@@ -878,7 +880,7 @@ void mrsmap::downsamplePointCloudMean( const pcl::PointCloud< pcl::PointXYZRGB >
 			}
 
 
-			if( !std::isnan( cloudIn->points[y*cloudIn->width+x].x ) ) {
+			if( !boost::math::isnan( cloudIn->points[y*cloudIn->width+x].x ) ) {
 
 				point(0) += cloudIn->points[y*cloudIn->width+x].x;
 				point(1) += cloudIn->points[y*cloudIn->width+x].y;
@@ -938,7 +940,7 @@ void mrsmap::downsamplePointCloudClosest( const pcl::PointCloud< pcl::PointXYZRG
 
 			}
 
-			if( !isnan( cloudIn->points[y*cloudIn->width+x].x ) && cloudIn->points[y*cloudIn->width+x].z < closestDepth ) {
+			if( !boost::math::isnan( cloudIn->points[y*cloudIn->width+x].x ) && cloudIn->points[y*cloudIn->width+x].z < closestDepth ) {
 
 				cloudOut->points[idx].x = cloudIn->points[y*cloudIn->width+x].x;
 				cloudOut->points[idx].y = cloudIn->points[y*cloudIn->width+x].y;

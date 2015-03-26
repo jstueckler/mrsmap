@@ -121,8 +121,8 @@ public:
 		}
 		if( maxCell == -1 )
 			return -1;
-		z = floor(maxCell / (binsXY_));
-		y = floor( (maxCell-z*binsXY_) / binsX_ );
+		z = floor(maxCell / (double)(binsXY_));
+		y = floor( (maxCell-z*binsXY_) / (double)binsX_ );
 		x = maxCell - z*binsXY_ - y*binsX_;
 
 		return maxCell;
@@ -306,9 +306,9 @@ public:
 		if( maxCell == -1 )
 			return -1;
 
-		w = floor( maxCell / (binsXYZ_) );
-		z = floor( (maxCell-w*binsXYZ_) / (binsXY_));
-		y = floor( (maxCell-w*binsXYZ_-z*binsXY_) / binsX_ );
+		w = floor( maxCell /  (double)(binsXYZ_) );
+		z = floor( (maxCell-w*binsXYZ_) /  (double)(binsXY_));
+		y = floor( (maxCell-w*binsXYZ_-z*binsXY_) /  (double)binsX_ );
 		x = maxCell - w*binsXYZ_ - z*binsXY_ - y*binsX_;
 
 		return maxCell;

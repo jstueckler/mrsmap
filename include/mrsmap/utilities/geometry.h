@@ -352,9 +352,9 @@ public:
     bool operator()(const Pose & state, float & transDist, float & rotDist ) {
         float bestTransDist = std::numeric_limits<float>::max();
         float bestRotDist = std::numeric_limits<float>::max();
-        for ( auto it : cluster_->members() ) {
-
-            Eigen::Matrix4d delta = state.asMatrix4d() * it.state_.asMatrix4d().inverse();
+		std::vector<ClusterItem<Pose>> members = cluster_->members();
+		for (std::vector<ClusterItem<Pose>>::iterator it = members.begin(); it != members.end(); ++it ) {
+            Eigen::Matrix4d delta = state.asMatrix4d() * it->state_.asMatrix4d().inverse();
             transDist = delta.block<3,1>( 0, 3 ).norm();
             rotDist = fabs(Geometry::piCut( Eigen::AngleAxisd( delta.block<3,3>( 0,0 ) ).angle() ) );
 

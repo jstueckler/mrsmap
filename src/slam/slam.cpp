@@ -1286,7 +1286,7 @@ boost::shared_ptr< pcl::PointCloud< pcl::PointXYZRGB > > SLAM::getMapCloud( cons
 		transformedCloud.sensor_orientation_ = Eigen::Quaternionf( transform.block<3,3>(0,0).cast<float>() );
 
 		for( unsigned int i = 0; i < transformedCloud.points.size(); i++ ) {
-			if( !std::isnan( transformedCloud.points[i].x ) )
+			if( !boost::math::isnan( transformedCloud.points[i].x ) )
 				mapCloud->points.push_back( transformedCloud.points[i] );
 		}
 

@@ -172,6 +172,12 @@ add_definitions( ${SSE_FLAGS} )
 target_link_libraries( evaluate_slam mrsslam ${Boost_PROGRAM_OPTIONS_LIBRARY} ${G2O_CORE_LIBRARY} ${G2O_STUFF_LIBRARY} ${G2O_SOLVER_CSPARSE} ${G2O_SOLVER_CSPARSE_EXTENSION} ${G2O_TYPES_SLAM3D} )
 
 
+# -- evaluate_pose_tracking for evaluation of object tracking on RGBD dataset
+add_executable( evaluate_pose_tracking src/tools/evaluation/evaluate_pose_tracking.cpp )
+add_definitions( ${SSE_FLAGS} )
+target_link_libraries( evaluate_pose_tracking mrsmap ${Boost_PROGRAM_OPTIONS_LIBRARY} ${G2O_CORE_LIBRARY} ${G2O_STUFF_LIBRARY} ${G2O_SOLVER_CSPARSE} ${G2O_SOLVER_CSPARSE_EXTENSION} ${G2O_TYPES_SLAM3D} )
+
+
 if(MSVC)
   # /bigobj is required for windows builds because of the size of
   # some object files (eigenbase for instance)

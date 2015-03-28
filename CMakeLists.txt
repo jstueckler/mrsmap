@@ -54,6 +54,10 @@ link_directories(${GSL_LIBRARY_DIRS})
 find_package(TBB REQUIRED)
 include_directories(${TBB_INCLUDE_DIRS})
 
+IF( TBB_DEBUG_LIBRARIES )
+  set(TBB_LIBRARIES optimized ${TBB_LIBRARIES} debug ${TBB_DEBUG_LIBRARIES})
+ENDIF()
+
 # OpenCV required
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})

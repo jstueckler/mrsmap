@@ -49,6 +49,7 @@
 
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
+#include <mrsmap/mrsmap_api.h>
 
 namespace mrsmap {
 
@@ -65,49 +66,49 @@ namespace mrsmap {
 
 	cv::Mat visualizeDepth( const cv::Mat& depthImg, float minDepth, float maxDepth );
 
-	bool pointInImage( const Eigen::Vector4f& p );
-	bool pointInImage( const Eigen::Vector4f& p, const unsigned int imageBorder );
-	Eigen::Vector2f pointImagePos( const Eigen::Vector4f& p );
+	bool MRSMAP_API pointInImage( const Eigen::Vector4f& p );
+	bool MRSMAP_API pointInImage( const Eigen::Vector4f& p, const unsigned int imageBorder );
+	Eigen::Vector2f MRSMAP_API pointImagePos( const Eigen::Vector4f& p );
 
-	void convertRGB2LAlphaBeta( float r, float g, float b, float& L, float& alpha, float& beta );
-	void convertLAlphaBeta2RGB( float L, float alpha, float beta, float& r, float& g, float& b );
-	void convertLAlphaBeta2RGBDamped( float L, float alpha, float beta, float& r, float& g, float& b );
+	void MRSMAP_API convertRGB2LAlphaBeta( float r, float g, float b, float& L, float& alpha, float& beta );
+	void MRSMAP_API convertLAlphaBeta2RGB( float L, float alpha, float beta, float& r, float& g, float& b );
+	void MRSMAP_API convertLAlphaBeta2RGBDamped( float L, float alpha, float beta, float& r, float& g, float& b );
 
-	cv::Mat visualizeAlphaBetaPlane( float L, unsigned int imgSize );
+	cv::Mat MRSMAP_API visualizeAlphaBetaPlane( float L, unsigned int imgSize );
 
-	void imagesToPointCloud( const cv::Mat& depthImg, const cv::Mat& colorImg, const std::string& timeStamp, pcl::PointCloud< pcl::PointXYZRGB >::Ptr& cloud, unsigned int downsampling = 1 );
-	void imagesToPointCloudUnorganized( const cv::Mat& depthImg, const cv::Mat& colorImg, const std::string& timeStamp, pcl::PointCloud< pcl::PointXYZRGB >::Ptr& cloud, unsigned int downsampling = 1 );
+	void MRSMAP_API imagesToPointCloud( const cv::Mat& depthImg, const cv::Mat& colorImg, const std::string& timeStamp, pcl::PointCloud< pcl::PointXYZRGB >::Ptr& cloud, unsigned int downsampling = 1 );
+	void MRSMAP_API imagesToPointCloudUnorganized( const cv::Mat& depthImg, const cv::Mat& colorImg, const std::string& timeStamp, pcl::PointCloud< pcl::PointXYZRGB >::Ptr& cloud, unsigned int downsampling = 1 );
 
-	void pointCloudToImage( const pcl::PointCloud< pcl::PointXYZRGB >::ConstPtr& cloud, cv::Mat& img );
-	void pointCloudToImages( const pcl::PointCloud< pcl::PointXYZRGB >::ConstPtr& cloud, cv::Mat& img_rgb, cv::Mat& img_depth );
-	void reprojectPointCloudToImages( const pcl::PointCloud< pcl::PointXYZRGB >::ConstPtr& cloud, cv::Mat& img_rgb, cv::Mat& img_depth );
-	void reprojectPointCloudToImagesF( const pcl::PointCloud< pcl::PointXYZRGB >::ConstPtr& cloud, cv::Mat& img_rgb, cv::Mat& img_depth );
+	void MRSMAP_API pointCloudToImage( const pcl::PointCloud< pcl::PointXYZRGB >::ConstPtr& cloud, cv::Mat& img );
+	void MRSMAP_API pointCloudToImages( const pcl::PointCloud< pcl::PointXYZRGB >::ConstPtr& cloud, cv::Mat& img_rgb, cv::Mat& img_depth );
+	void MRSMAP_API reprojectPointCloudToImages( const pcl::PointCloud< pcl::PointXYZRGB >::ConstPtr& cloud, cv::Mat& img_rgb, cv::Mat& img_depth );
+	void MRSMAP_API reprojectPointCloudToImagesF( const pcl::PointCloud< pcl::PointXYZRGB >::ConstPtr& cloud, cv::Mat& img_rgb, cv::Mat& img_depth );
 
-	void pointCloudsToOverlayImage( const pcl::PointCloud< pcl::PointXYZRGB >::ConstPtr& rgb_cloud, const pcl::PointCloud< pcl::PointXYZRGB >::ConstPtr& overlay_cloud, cv::Mat& img );
-
-
-	void downsamplePointCloud( const pcl::PointCloud< pcl::PointXYZRGB >::Ptr& cloudIn, pcl::PointCloud< pcl::PointXYZRGB >::Ptr& cloudOut, unsigned int downsampling );
-	void downsamplePointCloud( const pcl::PointCloud< pcl::PointXYZRGB >::ConstPtr& cloudIn, pcl::PointCloud< pcl::PointXYZRGB >::Ptr& cloudOut, unsigned int downsampling );
-
-	void downsamplePointCloudMean( const pcl::PointCloud< pcl::PointXYZRGB >::Ptr& cloudIn, pcl::PointCloud< pcl::PointXYZRGB >::Ptr& cloudOut, unsigned int downsampling );
-	void downsamplePointCloudMean( const pcl::PointCloud< pcl::PointXYZRGB >::ConstPtr& cloudIn, pcl::PointCloud< pcl::PointXYZRGB >::Ptr& cloudOut, unsigned int downsampling );
-
-	void downsamplePointCloudClosest( const pcl::PointCloud< pcl::PointXYZRGB >::Ptr& cloudIn, pcl::PointCloud< pcl::PointXYZRGB >::Ptr& cloudOut, unsigned int downsampling );
-	void downsamplePointCloudClosest( const pcl::PointCloud< pcl::PointXYZRGB >::ConstPtr& cloudIn, pcl::PointCloud< pcl::PointXYZRGB >::Ptr& cloudOut, unsigned int downsampling );
-
-	double averageDepth( const pcl::PointCloud< pcl::PointXYZRGB >::ConstPtr& cloud );
-	double medianDepth( const pcl::PointCloud< pcl::PointXYZRGB >::ConstPtr& cloud );
-
-	void getCameraCalibration( cv::Mat& cameraMatrix, cv::Mat& distortionCoeffs );
+	void MRSMAP_API pointCloudsToOverlayImage( const pcl::PointCloud< pcl::PointXYZRGB >::ConstPtr& rgb_cloud, const pcl::PointCloud< pcl::PointXYZRGB >::ConstPtr& overlay_cloud, cv::Mat& img );
 
 
-	void fillDepthFromRight( cv::Mat& imgDepth );
-	void fillDepthFromLeft( cv::Mat& imgDepth );
-	void fillDepthFromTop( cv::Mat& imgDepth );
-	void fillDepthFromBottom( cv::Mat& imgDepth );
+	void MRSMAP_API downsamplePointCloud( const pcl::PointCloud< pcl::PointXYZRGB >::Ptr& cloudIn, pcl::PointCloud< pcl::PointXYZRGB >::Ptr& cloudOut, unsigned int downsampling );
+	void MRSMAP_API downsamplePointCloud( const pcl::PointCloud< pcl::PointXYZRGB >::ConstPtr& cloudIn, pcl::PointCloud< pcl::PointXYZRGB >::Ptr& cloudOut, unsigned int downsampling );
+
+	void MRSMAP_API downsamplePointCloudMean( const pcl::PointCloud< pcl::PointXYZRGB >::Ptr& cloudIn, pcl::PointCloud< pcl::PointXYZRGB >::Ptr& cloudOut, unsigned int downsampling );
+	void MRSMAP_API downsamplePointCloudMean( const pcl::PointCloud< pcl::PointXYZRGB >::ConstPtr& cloudIn, pcl::PointCloud< pcl::PointXYZRGB >::Ptr& cloudOut, unsigned int downsampling );
+
+	void MRSMAP_API downsamplePointCloudClosest( const pcl::PointCloud< pcl::PointXYZRGB >::Ptr& cloudIn, pcl::PointCloud< pcl::PointXYZRGB >::Ptr& cloudOut, unsigned int downsampling );
+	void MRSMAP_API downsamplePointCloudClosest( const pcl::PointCloud< pcl::PointXYZRGB >::ConstPtr& cloudIn, pcl::PointCloud< pcl::PointXYZRGB >::Ptr& cloudOut, unsigned int downsampling );
+
+	double MRSMAP_API averageDepth( const pcl::PointCloud< pcl::PointXYZRGB >::ConstPtr& cloud );
+	double MRSMAP_API medianDepth( const pcl::PointCloud< pcl::PointXYZRGB >::ConstPtr& cloud );
+
+	void MRSMAP_API getCameraCalibration( cv::Mat& cameraMatrix, cv::Mat& distortionCoeffs );
 
 
-	void poseToTransform(const Eigen::Matrix<double, 7, 1> & pose, Eigen::Matrix4d & transform);
+	void MRSMAP_API fillDepthFromRight( cv::Mat& imgDepth );
+	void MRSMAP_API fillDepthFromLeft( cv::Mat& imgDepth );
+	void MRSMAP_API fillDepthFromTop( cv::Mat& imgDepth );
+	void MRSMAP_API fillDepthFromBottom( cv::Mat& imgDepth );
+
+
+	void MRSMAP_API poseToTransform(const Eigen::Matrix<double, 7, 1> & pose, Eigen::Matrix4d & transform);
 
 	static inline double sampleUniform( gsl_rng* rng, double min, double max );
 

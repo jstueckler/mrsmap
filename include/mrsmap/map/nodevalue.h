@@ -70,8 +70,9 @@
 #include <tbb/tbb.h>
 #include <tbb/concurrent_queue.h>
 
+#define uchar flann_uchar
 #include <flann/flann.h>
-
+#undef uchar //Prevent ambiguous symbol error when OpenCV defines uchar
 
 
 namespace mrsmap {

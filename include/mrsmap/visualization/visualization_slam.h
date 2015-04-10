@@ -44,12 +44,13 @@
 #include <string>
 
 #include <mrsmap/visualization/visualization_map.h>
+#include <mrsmap/mrsslam_api.h>
 
 namespace mrsmap {
 
 	class SLAM;
 
-	class ViewerSLAM : public Viewer {
+	class MRSSLAM_API ViewerSLAM : public Viewer {
 	public:
 		ViewerSLAM( SLAM* slam ) : Viewer(), slam_(slam) {}
 		virtual ~ViewerSLAM() {}

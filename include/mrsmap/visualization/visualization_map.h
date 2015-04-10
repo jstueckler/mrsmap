@@ -42,11 +42,12 @@
 #include "pcl/visualization/pcl_visualizer.h"
 
 #include <string>
+#include <mrsmap/mrsmap_api.h>
 
 
 namespace mrsmap {
 
-	class Viewer {
+	class MRSMAP_API Viewer {
 	public:
 		friend class pcl::visualization::PCLVisualizer;
 

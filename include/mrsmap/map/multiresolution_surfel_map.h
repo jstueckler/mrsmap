@@ -73,6 +73,7 @@
 #include <tbb/concurrent_queue.h>
 
 #include <flann/flann.h>
+#include <mrsmap/mrsmap_api.h>
 
 #define MIN_NUM_POINTS_PER_SURFEL 10
 
@@ -106,7 +107,7 @@ namespace mrsmap {
 
 
 
-	class MultiResolutionSurfelMap
+	class MRSMAP_API MultiResolutionSurfelMap
 	{
 	public:
 
@@ -154,7 +155,7 @@ namespace mrsmap {
 
 
 
-		class ImagePreAllocator {
+		class MRSMAP_API ImagePreAllocator {
 		public:
 			ImagePreAllocator();
 
@@ -185,8 +186,8 @@ namespace mrsmap {
 
 		};
 
-
-		MultiResolutionSurfelMap( float minResolution, float radius, boost::shared_ptr< spatialaggregate::OcTreeNodeAllocator< float, NodeValue > > allocator = boost::make_shared< spatialaggregate::OcTreeNodeAllocator< float, NodeValue > >() );
+		MultiResolutionSurfelMap( float minResolution, float radius);
+		MultiResolutionSurfelMap( float minResolution, float radius, boost::shared_ptr< spatialaggregate::OcTreeNodeAllocator< float, NodeValue > > allocator );
 
 		~MultiResolutionSurfelMap();
 
@@ -368,7 +369,8 @@ namespace mrsmap {
 
 	public:
 		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-
+	private:
+		void construct( float minResolution, float radius, boost::shared_ptr< spatialaggregate::OcTreeNodeAllocator< float, NodeValue > > allocator );
 	};
 
 

@@ -266,9 +266,9 @@ bool surfelPairVoting( MultiResolutionSurfelMap& source, MultiResolutionSurfelMa
 
             MultiResolutionSurfelMap::Surfel* srcRefSurfel = &(currentNode->value_.surfels_[currentSurfelIdx]);
 
-            if ( std::isnan( srcRefSurfel->normal_(0) ) ||
-                 std::isnan( srcRefSurfel->normal_(1) ) ||
-                 std::isnan( srcRefSurfel->normal_(2) ) )
+            if ( boost::math::isnan( srcRefSurfel->normal_(0) ) ||
+                 boost::math::isnan( srcRefSurfel->normal_(1) ) ||
+                 boost::math::isnan( srcRefSurfel->normal_(2) ) )
                 continue;
 
 

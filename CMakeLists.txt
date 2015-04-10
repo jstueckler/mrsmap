@@ -19,7 +19,7 @@ add_definitions( -std=c++0x )
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules/" ${CMAKE_MODULE_PATH})
 
 
-IF( NOT CATKIN_DEVEL_PREFIX STREQUAL "" )
+IF( DEFINED CATKIN_DEVEL_PREFIX )
 
   ## Find catkin macros and libraries
   ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -53,6 +53,10 @@ link_directories(${GSL_LIBRARY_DIRS})
 # TBB required
 find_package(TBB REQUIRED)
 include_directories(${TBB_INCLUDE_DIRS})
+
+IF( TBB_DEBUG_LIBRARIES )
+  set(TBB_LIBRARIES optimized ${TBB_LIBRARIES} debug ${TBB_DEBUG_LIBRARIES})
+ENDIF()
 
 # OpenCV required
 find_package(OpenCV REQUIRED)
@@ -104,11 +108,28 @@ set( SRC_MRSMAPLIB
 		src/registration/multiresolution_surfel_initial_alignment.cpp
 		src/utilities/utilities.cpp
 		src/visualization/visualization_map.cpp
+		include/mrsmap/map/multiresolution_surfel_map.h
+		include/mrsmap/map/nodevalue.h
+		include/mrsmap/map/surfel.h
+		include/mrsmap/map/surfelpair.h
+		include/mrsmap/map/shapetexture_feature.h
+		include/mrsmap/registration/multiresolution_surfel_registration.h
+		include/mrsmap/registration/multiresolution_soft_surfel_registration.h
+		include/mrsmap/registration/multiresolution_surfel_initial_alignment.h
+		include/mrsmap/utilities/utilities.h
+		include/mrsmap/visualization/visualization_map.h
+		include/mrsmap/mrsmap_api.h
 )
 
-add_library( mrsmap SHARED ${SRC_MRSMAPLIB} )
+option (BUILD_SHARED_LIBS "Build Shared Libraries" ON)
+set (LIB_TYPE SHARED)
+if(NOT BUILD_SHARED_LIBS)
+  set (LIB_TYPE STATIC)
+endif()
+
+add_library( mrsmap ${LIB_TYPE} ${SRC_MRSMAPLIB} )
 add_definitions( ${SSE_FLAGS} )
-target_link_libraries( mrsmap octreelib ${PCL_LIBRARIES} ${OpenCV_LIBS} ${TBB_LIBRARIES} ${GSL_LIBRARIES} )
+target_link_libraries( mrsmap ${OCTREELIB_LIBRARY} ${PCL_LIBRARIES} ${OpenCV_LIBS} ${TBB_LIBRARIES} ${GSL_LIBRARIES} )
 
 
 
@@ -126,9 +147,15 @@ set( SRC_MRSSLAMLIB
 		src/visualization/visualization_map.cpp
 )
 
-add_library( mrsslam SHARED src/slam/slam.cpp src/visualization/visualization_slam.cpp )
+add_library( mrsslam ${LIB_TYPE}
+		src/slam/slam.cpp
+		src/visualization/visualization_slam.cpp
+		include/mrsmap/slam/slam.h
+		include/mrsmap/visualization/visualization_slam.h
+		include/mrsmap/mrsslam_api.h
+)
 add_definitions( ${SSE_FLAGS} )
-target_link_libraries( mrsslam mrsmap ${G2O_CORE_LIBRARY} ${G2O_STUFF_LIBRARY} ${G2O_SOLVER_CSPARSE} ${G2O_SOLVER_CSPARSE_EXTENSION} ${G2O_TYPES_SLAM3D} )
+target_link_libraries( mrsslam mrsmap ${CSPARSE_LIBRARY} ${G2O_CORE_LIBRARY} ${G2O_STUFF_LIBRARY} ${G2O_SOLVER_CSPARSE} ${G2O_SOLVER_CSPARSE_EXTENSION} ${G2O_TYPES_SLAM3D} )
 
 
 # -- evaluate_visual_odometry for evaluation of visual odometry performance on RGBD dataset
@@ -148,3 +175,16 @@ add_executable( evaluate_slam src/tools/evaluation/evaluate_slam.cpp )
 add_definitions( ${SSE_FLAGS} )
 target_link_libraries( evaluate_slam mrsslam ${Boost_PROGRAM_OPTIONS_LIBRARY} ${G2O_CORE_LIBRARY} ${G2O_STUFF_LIBRARY} ${G2O_SOLVER_CSPARSE} ${G2O_SOLVER_CSPARSE_EXTENSION} ${G2O_TYPES_SLAM3D} )
 
+
+# -- evaluate_pose_tracking for evaluation of object tracking on RGBD dataset
+add_executable( evaluate_pose_tracking src/tools/evaluation/evaluate_pose_tracking.cpp )
+add_definitions( ${SSE_FLAGS} )
+target_link_libraries( evaluate_pose_tracking mrsmap ${Boost_PROGRAM_OPTIONS_LIBRARY} ${G2O_CORE_LIBRARY} ${G2O_STUFF_LIBRARY} ${G2O_SOLVER_CSPARSE} ${G2O_SOLVER_CSPARSE_EXTENSION} ${G2O_TYPES_SLAM3D} )
+
+
+if(MSVC)
+  # /bigobj is required for windows builds because of the size of
+  # some object files (eigenbase for instance)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /bigobj")
+endif()

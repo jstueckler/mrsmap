@@ -165,7 +165,7 @@ public:
 			if( entryStrs.size() == 4 ) {
 
 //				while( !viewer_.processFrame && viewer_.is_running ) {
-//					usleep( 10 );
+//					boost::this_thread::sleep( boost::posix_time::microseconds(10) ); //usleep( 10 );
 //				}
 
 				if( count == 1 )
@@ -264,7 +264,7 @@ public:
 
 				if( debug_ ) {
 					viewer_.spinOnce();
-					usleep( 1000 );
+					boost::this_thread::sleep( boost::posix_time::milliseconds(1) ); //usleep( 1000 );
 				}
 
 			}
@@ -333,7 +333,7 @@ int main( int argc, char** argv ) {
 		}
 
 		ev.viewer_.spinOnce();
-		usleep( 1000 );
+		boost::this_thread::sleep( boost::posix_time::milliseconds(1) ); //usleep( 1000 );
 	}
 
 	return 0;

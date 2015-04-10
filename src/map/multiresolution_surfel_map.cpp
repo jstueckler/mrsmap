@@ -15,9 +15,9 @@
  *     copyright notice, this list of conditions and the following
  *     disclaimer in the documentation and/or other materials provided
  *     with the distribution.
- *   * Neither the name of University of Bonn, Computer Science Institute 
- *     VI nor the names of its contributors may be used to endorse or 
- *     promote products derived from this software without specific 
+ *   * Neither the name of University of Bonn, Computer Science Institute
+ *     VI nor the names of its contributors may be used to endorse or
+ *     promote products derived from this software without specific
  *     prior written permission.
  *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -162,8 +162,15 @@ void MultiResolutionSurfelMap::ImagePreAllocator::prepare( unsigned int w, unsig
 }
 
 
+MultiResolutionSurfelMap::MultiResolutionSurfelMap( float minResolution, float maxRange) {
+	construct( minResolution, maxRange, boost::make_shared< spatialaggregate::OcTreeNodeAllocator< float, NodeValue > >() );
+}
 
 MultiResolutionSurfelMap::MultiResolutionSurfelMap( float minResolution, float maxRange, boost::shared_ptr< spatialaggregate::OcTreeNodeAllocator< float, NodeValue > > allocator ) {
+	construct( minResolution, maxRange, allocator );
+}
+
+void MultiResolutionSurfelMap::construct( float minResolution, float maxRange, boost::shared_ptr< spatialaggregate::OcTreeNodeAllocator< float, NodeValue > > allocator ) {
 
 	min_resolution_ = minResolution;
 	max_range_ = maxRange;
@@ -250,13 +257,13 @@ void MultiResolutionSurfelMap::addPoints( const pcl::PointCloud< pcl::PointXYZRG
 		const float y = p.y;
 		const float z = p.z;
 
-		if ( isnan( x ) || isinf( x ) )
+		if ( boost::math::isnan( x ) || boost::math::isinf( x ) )
 			continue;
 
-		if ( isnan( y ) || isinf( y ) )
+		if ( boost::math::isnan( y ) || boost::math::isinf( y ) )
 			continue;
 
-		if ( isnan( z ) || isinf( z ) )
+		if ( boost::math::isnan( z ) || boost::math::isinf( z ) )
 			continue;
 
 		float rgbf = p.rgb;
@@ -394,7 +401,7 @@ void MultiResolutionSurfelMap::addImage( const pcl::PointCloud< pcl::PointXYZRGB
 
 			const pcl::PointXYZRGB& p = cloud.points[idx++];
 
-			if( std::isnan( p.x ) ) {
+			if( boost::math::isnan( p.x ) ) {
 				mapPtr++;
 				imgPtr++;
 				continue;
@@ -661,7 +668,7 @@ void MultiResolutionSurfelMap::addDisplacementImage( const pcl::PointCloud< pcl:
 			const pcl::PointXYZRGB& p_disp = cloud_disp.points[idx];
 			const pcl::PointXYZRGB& p = cloud_pos.points[idx++];
 
-			if( std::isnan( p.x ) ) {
+			if( boost::math::isnan( p.x ) ) {
 				mapPtr++;
 				imgPtr++;
 				continue;
@@ -906,7 +913,12 @@ void MultiResolutionSurfelMap::addImagePointFeatures( const cv::Mat& img, const 
 	//CV_WRAP explicit ORB(int nfeatures = 500, float scaleFactor = 1.2f, int nlevels = 8, int edgeThreshold = 31,
     //int firstLevel = 0, int WTA_K=2, int scoreType=ORB::HARRIS_SCORE, int patchSize=31 );
 
-	cv::ORB orb( params_.numPointFeatures, 1.2f, 8, 31, 0, 2, cv::ORB::HARRIS_SCORE, 31 );
+#if CV_MAJOR_VERSION > 2
+	//cv::ORB is abstract
+	cv::Ptr<cv::ORB> orb = cv::ORB::create( params_.numPointFeatures, 1.2f, 8, 31, 0, 2, cv::ORB::HARRIS_SCORE, 31 );
+#else
+	cv::Ptr<cv::ORB> orb = new cv::ORB( params_.numPointFeatures, 1.2f, 8, 31, 0, 2, cv::ORB::HARRIS_SCORE, 31 );
+#endif
 
 	const Eigen::Vector3d so = transform.block<3,1>(0,3);
 	const Eigen::Quaterniond sori( transform.block<3,3>(0,0) );
@@ -916,12 +928,12 @@ void MultiResolutionSurfelMap::addImagePointFeatures( const cv::Mat& img, const 
 	static cv::Mat last_img;
 
 	// in bytes
-	unsigned int descriptorSize = orb.descriptorSize();
+	unsigned int descriptorSize = orb->descriptorSize();
 
 	std::vector< cv::KeyPoint > detectedKeypoints, keypoints;
 	detectedKeypoints.reserve( params_.numPointFeatures );
 
-	orb.detect( img, detectedKeypoints, cv::Mat() );
+	orb->detect( img, detectedKeypoints, cv::Mat() );
 
 	std::cout << "detect: " << stopwatch_.getTimeSeconds() * 1000.0 << "\n";
 	stopwatch_.reset();
@@ -933,12 +945,15 @@ void MultiResolutionSurfelMap::addImagePointFeatures( const cv::Mat& img, const 
 	const unsigned int colWidth = width / cols;
 	const unsigned int rowHeight = height / rows;
 
-	std::vector< unsigned int > keypointGrid[ params_.GridRows ][ params_.GridCols ];
+	std::vector<std::vector<std::vector< unsigned int >>> keypointGrid;
+	keypointGrid.reserve(params_.GridRows);
 
-	for( unsigned int y = 0; y < params_.GridRows; y++ )
+	for( unsigned int y = 0; y < params_.GridRows; y++ ) {
+		keypointGrid[y].reserve(params_.GridCols);
 		for( unsigned int x = 0; x < params_.GridCols; x++ )
 			keypointGrid[y][x].reserve( 100 );
 
+	}
 	for( unsigned int i = 0; i < detectedKeypoints.size(); i++ ) {
 		unsigned int gridx = std::max( 0.f, std::min( (float)params_.GridCols, detectedKeypoints[i].pt.x / colWidth ) );
 		unsigned int gridy = std::max( 0.f, std::min( (float)params_.GridRows, detectedKeypoints[i].pt.y / rowHeight ) );
@@ -969,7 +984,7 @@ void MultiResolutionSurfelMap::addImagePointFeatures( const cv::Mat& img, const 
 	stopwatch_.reset();
 
 	cv::Mat detectedDescriptors;
-	orb.compute( img, detectedKeypoints, detectedDescriptors );
+	orb->compute( img, detectedKeypoints, detectedDescriptors );
 
 	std::cout << "extract: " << stopwatch_.getTimeSeconds() * 1000.0 << "\n";
 
@@ -1109,7 +1124,7 @@ void MultiResolutionSurfelMap::addImagePointFeatures( const cv::Mat& img, const 
 
 				int idx = y*width+x;
 				const pcl::PointXYZRGB& p = cloud.points[idx];
-				if( std::isnan( p.x ) ) {
+				if( boost::math::isnan( p.x ) ) {
 					continue;
 				}
 
@@ -1120,7 +1135,7 @@ void MultiResolutionSurfelMap::addImagePointFeatures( const cv::Mat& img, const 
 				sum2_z += pos(2)*pos(2);
 				num_z += 1.f;
 
-				if( std::isnan( z ) )
+				if( boost::math::isnan( z ) )
 					z = pos(2);
 				else
 					z = std::min( z, pos(2) );
@@ -1297,7 +1312,7 @@ void MultiResolutionSurfelMap::addImagePointFeatures( const cv::Mat& img, const 
 
 	// build LSH search index for this image using LSH implementation in FLANN 1.7.1
     stopwatch_.reset();
-    flann::Matrix< unsigned char > indexDescriptors( descriptors_.data, keypoints.size(), orb.descriptorSize() );
+    flann::Matrix< unsigned char > indexDescriptors( descriptors_.data, keypoints.size(), orb->descriptorSize() );
 	lsh_index_ = boost::shared_ptr< flann::Index< flann::HammingPopcnt< unsigned char > > >( new flann::Index< flann::HammingPopcnt< unsigned char > >( indexDescriptors, flann::LshIndexParams( 2, 20, 2 ) ) );
 	lsh_index_->buildIndex();
 	delta_t = stopwatch_.getTimeSeconds() * 1000.0f;
@@ -1399,13 +1414,13 @@ void MultiResolutionSurfelMap::findImageBorderPoints( const pcl::PointCloud< pcl
 			const float py = p.y;
 			const float pz = p.z;
 
-			if ( isnan( px ) || isinf( px ) )
+			if ( boost::math::isnan( px ) || boost::math::isinf( px ) )
 				continue;
 
-			if ( isnan( py ) || isinf( py ) )
+			if ( boost::math::isnan( py ) || boost::math::isinf( py ) )
 				continue;
 
-			if ( isnan( pz ) || isinf( pz ) )
+			if ( boost::math::isnan( pz ) || boost::math::isinf( pz ) )
 				continue;
 
 			indices.push_back( idx );
@@ -1423,13 +1438,13 @@ void MultiResolutionSurfelMap::findImageBorderPoints( const pcl::PointCloud< pcl
 			const float py = p.y;
 			const float pz = p.z;
 
-			if ( isnan( px ) || isinf( px ) )
+			if ( boost::math::isnan( px ) || boost::math::isinf( px ) )
 				continue;
 
-			if ( isnan( py ) || isinf( py ) )
+			if ( boost::math::isnan( py ) || boost::math::isinf( py ) )
 				continue;
 
-			if ( isnan( pz ) || isinf( pz ) )
+			if ( boost::math::isnan( pz ) || boost::math::isinf( pz ) )
 				continue;
 
 			indices.push_back( idx );
@@ -1452,13 +1467,13 @@ void MultiResolutionSurfelMap::findImageBorderPoints( const pcl::PointCloud< pcl
 			const float py = p.y;
 			const float pz = p.z;
 
-			if ( isnan( px ) || isinf( px ) )
+			if ( boost::math::isnan( px ) || boost::math::isinf( px ) )
 				continue;
 
-			if ( isnan( py ) || isinf( py ) )
+			if ( boost::math::isnan( py ) || boost::math::isinf( py ) )
 				continue;
 
-			if ( isnan( pz ) || isinf( pz ) )
+			if ( boost::math::isnan( pz ) || boost::math::isinf( pz ) )
 				continue;
 
 			indices.push_back( idx );
@@ -1476,13 +1491,13 @@ void MultiResolutionSurfelMap::findImageBorderPoints( const pcl::PointCloud< pcl
 			const float py = p.y;
 			const float pz = p.z;
 
-			if ( isnan( px ) || isinf( px ) )
+			if ( boost::math::isnan( px ) || boost::math::isinf( px ) )
 				continue;
 
-			if ( isnan( py ) || isinf( py ) )
+			if ( boost::math::isnan( py ) || boost::math::isinf( py ) )
 				continue;
 
-			if ( isnan( pz ) || isinf( pz ) )
+			if ( boost::math::isnan( pz ) || boost::math::isinf( pz ) )
 				continue;
 
 			indices.push_back( idx );
@@ -1522,7 +1537,7 @@ void MultiResolutionSurfelMap::findVirtualBorderPoints( const pcl::PointCloud< p
 			const float py = p.y;
 			const float pz = p.z;
 
-			if( isnan( px ) ) {
+			if( boost::math::isnan( px ) ) {
 				continue;
 			}
 
@@ -1564,7 +1579,7 @@ void MultiResolutionSurfelMap::findVirtualBorderPoints( const pcl::PointCloud< p
 			const float py = p.y;
 			const float pz = p.z;
 
-			if( isnan( px ) )
+			if( boost::math::isnan( px ) )
 				continue;
 
 			// check for depth jumps
@@ -1619,7 +1634,7 @@ void MultiResolutionSurfelMap::findForegroundBorderPoints( const pcl::PointCloud
 			const float py = p.y;
 			const float pz = p.z;
 
-			if( isnan( px ) ) {
+			if( boost::math::isnan( px ) ) {
 				continue;
 			}
 
@@ -1659,7 +1674,7 @@ void MultiResolutionSurfelMap::findForegroundBorderPoints( const pcl::PointCloud
 			const float py = p.y;
 			const float pz = p.z;
 
-			if( isnan( px ) )
+			if( boost::math::isnan( px ) )
 				continue;
 
 			// check for depth jumps
@@ -1712,7 +1727,7 @@ void MultiResolutionSurfelMap::findContourPoints( const pcl::PointCloud< pcl::Po
 			const float py = p.y;
 			const float pz = p.z;
 
-			if( isnan( px ) ) {
+			if( boost::math::isnan( px ) ) {
 				continue;
 			}
 
@@ -1755,7 +1770,7 @@ void MultiResolutionSurfelMap::findContourPoints( const pcl::PointCloud< pcl::Po
 			const float py = p.y;
 			const float pz = p.z;
 
-			if( isnan( px ) )
+			if( boost::math::isnan( px ) )
 				continue;
 
 			// check for depth jumps
@@ -1799,13 +1814,13 @@ void MultiResolutionSurfelMap::clearAtPoints( const pcl::PointCloud< pcl::PointX
 		const float y = p.y;
 		const float z = p.z;
 
-		if ( isnan( x ) || isinf( x ) )
+		if ( boost::math::isnan( x ) || boost::math::isinf( x ) )
 			continue;
 
-		if ( isnan( y ) || isinf( y ) )
+		if ( boost::math::isnan( y ) || boost::math::isinf( y ) )
 			continue;
 
-		if ( isnan( z ) || isinf( z ) )
+		if ( boost::math::isnan( z ) || boost::math::isinf( z ) )
 			continue;
 
 		Eigen::Matrix< double, 3, 1 > pos;
@@ -1857,13 +1872,13 @@ void MultiResolutionSurfelMap::markNoUpdateAtPoints( const pcl::PointCloud< pcl:
 		const float y = p.y;
 		const float z = p.z;
 
-		if ( isnan( x ) || isinf( x ) )
+		if ( boost::math::isnan( x ) || boost::math::isinf( x ) )
 			continue;
 
-		if ( isnan( y ) || isinf( y ) )
+		if ( boost::math::isnan( y ) || boost::math::isinf( y ) )
 			continue;
 
-		if ( isnan( z ) || isinf( z ) )
+		if ( boost::math::isnan( z ) || boost::math::isinf( z ) )
 			continue;
 
 		Eigen::Matrix< double, 3, 1 > pos;
@@ -1915,13 +1930,13 @@ void MultiResolutionSurfelMap::markBorderAtPoints( const pcl::PointCloud< pcl::P
 		const float y = p.y;
 		const float z = p.z;
 
-		if ( isnan( x ) || isinf( x ) )
+		if ( boost::math::isnan( x ) || boost::math::isinf( x ) )
 			continue;
 
-		if ( isnan( y ) || isinf( y ) )
+		if ( boost::math::isnan( y ) || boost::math::isinf( y ) )
 			continue;
 
-		if ( isnan( z ) || isinf( z ) )
+		if ( boost::math::isnan( z ) || boost::math::isinf( z ) )
 			continue;
 
 		Eigen::Matrix< double, 3, 1 > pos;
@@ -1959,7 +1974,7 @@ public:
 };
 
 
-void markBorderFromViewpointFunction( spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::MultiResolutionSurfelMap::NodeValue >* current, spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* next, void* data ) {
+void markBorderFromViewpointFunction( spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* current, spatialaggregate::OcTreeNode< float, MultiResolutionSurfelMap::NodeValue >* next, void* data ) {
 
 	MarkBorderInfo* info = (MarkBorderInfo*) data;
 
@@ -2029,7 +2044,7 @@ void MultiResolutionSurfelMap::clearUpdateSurfelsAtPoints( const pcl::PointCloud
 		const float y = p.y;
 		const float z = p.z;
 
-		if ( isnan( x ) )
+		if ( boost::math::isnan( x ) )
 			continue;
 
 		Eigen::Matrix< double, 3, 1 > pos;
@@ -2200,7 +2215,7 @@ bool MultiResolutionSurfelMap::pointInForeground( const Eigen::Vector3f& positio
 	for ( int y = 0; y < patch.rows; y++ ) {
 		for ( int x = 0; x < patch.cols; x++ ) {
 			const float depth = patch.at< float > ( y, x );
-			if ( !isnan( depth ) ) {
+			if ( !boost::math::isnan( depth ) ) {
 				float dist = fabsf( queryDepth - depth );
 				if ( dist < bestDist ) {
 					bestDist = dist;
@@ -2226,7 +2241,7 @@ bool MultiResolutionSurfelMap::pointInForeground( const Eigen::Vector3f& positio
 
 				const float depth = patch.at< float > ( y, x );
 				//				img_show.at<float>(r.y+y,r.x+x) = 0.f;
-				if ( !isnan( depth ) ) {
+				if ( !boost::math::isnan( depth ) ) {
 
 					if ( trackedDepth - depth > jumpThreshold ) {
 						return false;
@@ -2432,7 +2447,7 @@ std::vector< unsigned int > MultiResolutionSurfelMap::findInliers( const std::ve
 		const float y = p.y;
 		const float z = p.z;
 
-		if ( isnan( x ) )
+		if ( boost::math::isnan( x ) )
 			continue;
 
 		float rgbf = p.rgb;
@@ -2489,6 +2504,7 @@ std::vector< unsigned int > MultiResolutionSurfelMap::findInliers( const std::ve
 
 	}
 
+	return inliers;
 }
 
 
@@ -3910,9 +3926,9 @@ int MultiResolutionSurfelMap::buildSurfelPairsForSurfel(
         if( tgtSurfel->num_points_ < MultiResolutionSurfelMap::Surfel::min_points_ )
             continue;
 
-        if ( std::isnan( tgtSurfel->normal_(0) ) ||
-             std::isnan( tgtSurfel->normal_(1) ) ||
-             std::isnan( tgtSurfel->normal_(2) ) )
+        if ( boost::math::isnan( tgtSurfel->normal_(0) ) ||
+             boost::math::isnan( tgtSurfel->normal_(1) ) ||
+             boost::math::isnan( tgtSurfel->normal_(2) ) )
             continue;
 
         float dist = (srcSurfel->mean_.block<3,1>(0,0) - tgtSurfel->mean_.block<3,1>(0,0)).norm();
@@ -3985,9 +4001,9 @@ public:
             	MultiResolutionSurfelMap::Surfel* currentRefSurfel = &(node->value_.surfels_[i]);
                 unsigned int currentSurfelIdx = i;
 
-                if ( std::isnan( currentRefSurfel->normal_(0) ) ||
-                     std::isnan( currentRefSurfel->normal_(1) ) ||
-                     std::isnan( currentRefSurfel->normal_(2) ) )
+                if ( boost::math::isnan( currentRefSurfel->normal_(0) ) ||
+                     boost::math::isnan( currentRefSurfel->normal_(1) ) ||
+                     boost::math::isnan( currentRefSurfel->normal_(2) ) )
                     continue;
 
                 typename tbb::concurrent_vector< MultiResolutionSurfelMap::Surfel* >::iterator refSurfelIt = reference_surfels_->push_back( currentRefSurfel );
@@ -4019,9 +4035,9 @@ public:
 //                    if( tgtSurfel->num_points_ < NUM_SURFEL_POINTS_ROBUST )
 //                        continue;
 
-//                    if ( std::isnan( tgtSurfel->normal_(0) ) ||
-//                         std::isnan( tgtSurfel->normal_(1) ) ||
-//                         std::isnan( tgtSurfel->normal_(2) ) )
+//                    if ( boost::math::isnan( tgtSurfel->normal_(0) ) ||
+//                         boost::math::isnan( tgtSurfel->normal_(1) ) ||
+//                         boost::math::isnan( tgtSurfel->normal_(2) ) )
 //                        continue;
 
 

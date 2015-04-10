@@ -108,7 +108,7 @@ void Viewer::displayPointCloud( const std::string& name, const pcl::PointCloud< 
 	pcl::copyPointCloud( *cloud, *cloud2 );
 
 	for( unsigned int i = 0; i < cloud2->points.size(); i++ )
-		if( isnan( cloud2->points[i].x ) ) {
+		if( boost::math::isnan( cloud2->points[i].x ) ) {
 			cloud2->points[i].x = 0;
 			cloud2->points[i].y = 0;
 			cloud2->points[i].z = 0;

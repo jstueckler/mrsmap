@@ -367,7 +367,7 @@ public:
 
 							}
 							viewer_.spinOnce();
-							usleep(1000);
+							boost::this_thread::sleep( boost::posix_time::milliseconds(1) ); //usleep(1000);
 							once = true;
 
 						}
@@ -572,7 +572,7 @@ int main(int argc, char** argv) {
 	if( debug ) {
 		while( ev.viewer_.is_running ) {
 			ev.viewer_.spinOnce();
-			usleep(1000);
+			boost::this_thread::sleep( boost::posix_time::milliseconds(1) ); //usleep(1000);
 		}
 	}
 

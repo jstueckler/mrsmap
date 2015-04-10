@@ -15,9 +15,9 @@
  *     copyright notice, this list of conditions and the following
  *     disclaimer in the documentation and/or other materials provided
  *     with the distribution.
- *   * Neither the name of University of Bonn, Computer Science Institute 
- *     VI nor the names of its contributors may be used to endorse or 
- *     promote products derived from this software without specific 
+ *   * Neither the name of University of Bonn, Computer Science Institute
+ *     VI nor the names of its contributors may be used to endorse or
+ *     promote products derived from this software without specific
  *     prior written permission.
  *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -913,7 +913,7 @@ void MultiResolutionSurfelMap::addImagePointFeatures( const cv::Mat& img, const 
 	//CV_WRAP explicit ORB(int nfeatures = 500, float scaleFactor = 1.2f, int nlevels = 8, int edgeThreshold = 31,
     //int firstLevel = 0, int WTA_K=2, int scoreType=ORB::HARRIS_SCORE, int patchSize=31 );
 
-#if CV_VERSION_EPOCH > 2
+#if CV_MAJOR_VERSION > 2
 	//cv::ORB is abstract
 	cv::Ptr<cv::ORB> orb = cv::ORB::create( params_.numPointFeatures, 1.2f, 8, 31, 0, 2, cv::ORB::HARRIS_SCORE, 31 );
 #else

@@ -142,7 +142,7 @@ void ShapeTextureFeature::add( const Eigen::Matrix< double, 6, 1 >& p_src, const
 	const Eigen::Vector3d& n2 = n_dst;
 
 	Eigen::Vector3d d = p2-p1;
-	d.normalize();
+	if (d != Eigen::Vector3d::Zero()) d.normalize();
 
 	const int s1 = std::min( (SHAPE_TEXTURE_TABLE_SIZE-1), std::max( 0, (int)boost::math::round((SHAPE_TEXTURE_TABLE_SIZE-1.0) * 0.5 * (n1.dot( d )+1.0) ) ) );
 	const int s2 = std::min( (SHAPE_TEXTURE_TABLE_SIZE-1), std::max( 0, (int)boost::math::round((SHAPE_TEXTURE_TABLE_SIZE-1.0) * 0.5 * (n2.dot( d )+1.0) ) ) );

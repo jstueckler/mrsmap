@@ -108,7 +108,7 @@ set( SRC_MRSMAPLIB
 
 add_library( mrsmap SHARED ${SRC_MRSMAPLIB} )
 add_definitions( ${SSE_FLAGS} )
-target_link_libraries( mrsmap octreelib ${PCL_LIBRARIES} ${OpenCV_LIBS} ${TBB_LIBRARIES} ${GSL_LIBRARIES} )
+target_link_libraries( mrsmap ${OCTREELIB_LIBRARY} ${PCL_LIBRARIES} ${OpenCV_LIBS} ${TBB_LIBRARIES} ${GSL_LIBRARIES} )
 
 
 

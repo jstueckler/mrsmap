@@ -72,7 +72,7 @@ MRSMap depends on the following third party libraries:
 - Boost >= 1.54
 - ClooG
 
-Detailed build instructions can be found on https://github.com/ais-hilgert/mrsmap/wiki
+Detailed build instructions can be found on https://github.com/jstueckler/mrsmap/wiki
 
 
 Compile instructions:
